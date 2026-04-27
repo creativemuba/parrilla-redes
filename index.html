@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parrilla de Redes Sociales</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0d0f;--surface:#141417;--surface2:#1c1c22;--border:#2a2a33;
+    --accent-ig:#E1306C;--accent-fb:#1877F2;--accent-tt:#69C9D0;
+    --accent-ig-soft:rgba(225,48,108,0.12);--accent-fb-soft:rgba(24,119,242,0.12);--accent-tt-soft:rgba(105,201,208,0.12);
+    --text:#f0f0f5;--text-muted:#7a7a8a;--text-dim:#3a3a4a;
+    --green:#3ddc84;--yellow:#ffc94a;--purple:#a78bfa;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:32px 24px;}
+
+  /* HEADER */
+  .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:20px;}
+  .brand-area h1{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;line-height:1.1;background:linear-gradient(135deg,#fff 40%,var(--text-muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .brand-area p{color:var(--text-muted);font-size:0.88rem;margin-top:6px;font-weight:300;}
+  .header-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .month-nav{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 18px;}
+  .month-nav button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:6px;transition:all 0.15s;}
+  .month-nav button:hover{background:var(--border);color:var(--text);}
+  .month-nav span{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;min-width:160px;text-align:center;}
+  .add-btn{background:linear-gradient(135deg,#E1306C,#a020f0);color:white;border:none;padding:10px 20px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
+  .add-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(225,48,108,0.35);}
+  .export-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:10px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+  .export-btn:hover{border-color:var(--green);color:var(--green);}
+
+  /* SYNC STATUS */
+  .sync-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-size:0.8rem;margin-bottom:24px;border:1px solid var(--border);background:var(--surface);}
+  .sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .sync-bar.synced .sync-dot{background:var(--green);}
+  .sync-bar.syncing .sync-dot{background:var(--yellow);animation:pulse 1s infinite;}
+  .sync-bar.error .sync-dot{background:#ff6060;}
+  .sync-bar.synced{border-color:rgba(61,220,132,0.2);}
+  .sync-bar.error{border-color:rgba(255,96,96,0.2);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  /* STATS */
+  .stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:32px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px;}
+  .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  .stat-card .stat-info strong{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;display:block;line-height:1;}
+  .stat-card .stat-info span{font-size:0.75rem;color:var(--text-muted);font-weight:300;}
+
+  /* CONTROLS */
+  .controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;}
+  .filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:7px 14px;border-radius:50px;cursor:pointer;font-size:0.8rem;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;}
+  .filter-btn[data-filter="all"].active{background:var(--surface2);color:var(--text);border-color:var(--border);}
+  .filter-btn[data-filter="instagram"].active{background:var(--accent-ig-soft);border-color:var(--accent-ig);color:var(--accent-ig);}
+  .filter-btn[data-filter="facebook"].active{background:var(--accent-fb-soft);border-color:var(--accent-fb);color:var(--accent-fb);}
+  .filter-btn[data-filter="tiktok"].active{background:var(--accent-tt-soft);border-color:var(--accent-tt);color:var(--accent-tt);}
+  .view-toggle{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;}
+  .view-toggle button{background:none;border:none;color:var(--text-muted);padding:6px 12px;border-radius:7px;cursor:pointer;font-size:0.82rem;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+  .view-toggle button.active{background:var(--surface2);color:var(--text);}
+
+  /* CALENDAR */
+  .calendar-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+  .cal-day-name{text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-muted);padding:8px 0;font-family:'Syne',sans-serif;letter-spacing:0.06em;text-transform:uppercase;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-cell{background:var(--surface);border:1px solid var(--border);border-radius:12px;min-height:120px;padding:10px;position:relative;transition:border-color 0.2s;cursor:pointer;}
+  .cal-cell:hover{border-color:#555;}
+  .cal-cell.other-month{opacity:0.25;pointer-events:none;}
+  .cal-cell.today{border-color:var(--accent-ig);background:rgba(225,48,108,0.05);}
+  .cal-cell .day-num{font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text-muted);margin-bottom:6px;}
+  .cal-cell.today .day-num{color:var(--accent-ig);}
+  .cal-thumb{width:100%;height:44px;object-fit:cover;border-radius:6px;margin-bottom:5px;display:block;cursor:zoom-in;}
+  .post-pill{display:flex;align-items:center;gap:5px;padding:3px 7px;border-radius:6px;font-size:0.68rem;font-weight:500;margin-bottom:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.15s;}
+  .post-pill:hover{opacity:0.75;}
+  .post-pill.instagram{background:var(--accent-ig-soft);color:var(--accent-ig);}
+  .post-pill.facebook{background:var(--accent-fb-soft);color:var(--accent-fb);}
+  .post-pill.tiktok{background:var(--accent-tt-soft);color:var(--accent-tt);}
+  .more-posts{font-size:0.65rem;color:var(--text-muted);margin-top:2px;padding:2px 6px;border-radius:4px;background:var(--surface2);}
+
+  /* VIEWS */
+  .calendar-view{display:block;}.calendar-view.hidden{display:none;}
+  .list-view{display:none;}.list-view.active{display:block;}
+  .gallery-view{display:none;}.gallery-view.active{display:block;}
+
+  /* LIST */
+  .list-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+  .list-table{width:100%;border-collapse:collapse;}
+  .list-table thead th{text-align:left;padding:12px 16px;font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;color:var(--text-muted);letter-spacing:0.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+  .list-table tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s;cursor:pointer;}
+  .list-table tbody tr:hover{background:var(--surface2);}
+  .list-table tbody td{padding:12px 16px;font-size:0.85rem;vertical-align:middle;}
+  .thumb-sm{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;display:block;}
+  .no-thumb{width:52px;height:52px;border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:1.1rem;}
+  .network-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:50px;font-size:0.75rem;font-weight:500;}
+  .network-badge.instagram{background:var(--accent-ig-soft);color:var(--accent-ig);}
+  .network-badge.facebook{background:var(--accent-fb-soft);color:var(--accent-fb);}
+  .network-badge.tiktok{background:var(--accent-tt-soft);color:var(--accent-tt);}
+  .status-dot{display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;}
+  .status-dot::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .status-dot.borrador::before{background:var(--text-dim);}.status-dot.aprobado::before{background:var(--yellow);}.status-dot.publicado::before{background:var(--green);}
+  .status-dot.borrador{color:var(--text-muted);}.status-dot.aprobado{color:var(--yellow);}.status-dot.publicado{color:var(--green);}
+  .content-type-tag{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:500;}
+  .copy-text{max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted);font-size:0.82rem;font-style:italic;}
+
+  /* GALLERY */
+  .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;}
+  .gallery-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform 0.2s,border-color 0.2s;}
+  .gallery-card:hover{transform:translateY(-3px);}
+  .gallery-card.instagram:hover{border-color:var(--accent-ig);}
+  .gallery-card.facebook:hover{border-color:var(--accent-fb);}
+  .gallery-card.tiktok:hover{border-color:var(--accent-tt);}
+  .gallery-img-wrap{width:100%;height:200px;background:var(--surface2);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  .gallery-img-wrap img{width:100%;height:100%;object-fit:cover;cursor:zoom-in;}
+  .gallery-no-img{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-dim);font-size:0.78rem;}
+  .gallery-no-img span{font-size:2.5rem;}
+  .gallery-network-badge{position:absolute;top:10px;left:10px;padding:3px 9px;border-radius:50px;font-size:0.7rem;font-weight:600;backdrop-filter:blur(6px);}
+  .gallery-network-badge.instagram{background:rgba(225,48,108,0.85);color:#fff;}
+  .gallery-network-badge.facebook{background:rgba(24,119,242,0.85);color:#fff;}
+  .gallery-network-badge.tiktok{background:rgba(105,201,208,0.85);color:#111;}
+  .gallery-status{position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;border:2px solid rgba(0,0,0,0.4);}
+  .gallery-status.borrador{background:#555;}.gallery-status.aprobado{background:var(--yellow);}.gallery-status.publicado{background:var(--green);}
+  .gallery-info{padding:14px 16px;}
+  .gallery-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .gallery-date{font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;color:var(--text-muted);}
+  .gallery-type{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:2px 7px;border-radius:4px;font-size:0.68rem;font-weight:500;}
+  .gallery-copy{font-size:0.82rem;color:var(--text-muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-style:italic;}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:1000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:580px;position:relative;animation:slideUp 0.25s ease;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;}
+  .modal-header{position:sticky;top:0;background:var(--surface);z-index:10;padding:24px 32px 16px;border-radius:20px 20px 0 0;border-bottom:1px solid var(--border);}
+  .modal-body{padding:24px 32px;flex:1;}
+  .modal-footer{position:sticky;bottom:0;background:var(--surface);padding:16px 32px 24px;border-top:1px solid var(--border);border-radius:0 0 20px 20px;}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin:0;letter-spacing:-0.02em;}
+  .modal-close{position:absolute;top:18px;right:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+  .modal-close:hover{color:var(--text);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-group label{font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;font-family:'Syne',sans-serif;}
+  .form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent-ig);}
+  .form-group textarea{resize:vertical;min-height:140px;line-height:1.5;}
+  .form-group select option{background:#1c1c22;}
+
+  /* UPLOAD ZONE */
+  .upload-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;min-height:80px;}
+  .upload-zone:hover{border-color:var(--accent-ig);background:var(--accent-ig-soft);}
+  .upload-zone.has-image{border-style:solid;border-color:var(--border);padding:0;}
+  .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text-muted);pointer-events:none;}
+  .upload-placeholder .upload-icon{font-size:2rem;}
+  .upload-placeholder p{font-size:0.82rem;line-height:1.4;}
+  .upload-placeholder span{font-size:0.72rem;color:var(--text-dim);}
+  .preview-wrap{position:relative;display:none;}
+  .preview-wrap img{width:100%;max-height:240px;object-fit:cover;border-radius:10px;display:block;}
+  .preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+  .preview-remove:hover{background:rgba(220,50,50,0.9);}
+  .carousel-thumb{position:relative;flex-shrink:0;width:110px;height:138px;border-radius:8px;overflow:hidden;scroll-snap-align:start;border:1px solid var(--border);}
+  .carousel-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .carousel-thumb-num{position:absolute;top:4px;left:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.65rem;font-weight:700;border-radius:4px;padding:2px 5px;}
+  .carousel-thumb-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:0.65rem;display:flex;align-items:center;justify-content:center;}
+  .carousel-thumb-del:hover{background:rgba(220,50,50,0.9);}
+  #carouselStrip::-webkit-scrollbar{height:4px;}
+  #carouselStrip::-webkit-scrollbar-track{background:var(--surface2);border-radius:2px;}
+  #carouselStrip::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  /* LIGHTBOX */
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:2000;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:90vw;max-height:85vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 80px rgba(0,0,0,0.8);}
+  .lightbox-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;}
+
+  /* MODAL ACTIONS */
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+  .btn-cancel{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:10px 20px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.85rem;transition:all 0.15s;}
+  .btn-cancel:hover{color:var(--text);}
+  .btn-save{background:linear-gradient(135deg,#E1306C,#a020f0);color:white;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;transition:all 0.2s;}
+  .btn-save:hover{opacity:0.9;transform:translateY(-1px);}
+  .btn-save:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .btn-delete{background:rgba(255,60,60,0.1);color:#ff6060;border:1px solid rgba(255,60,60,0.3);padding:10px 16px;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.85rem;margin-right:auto;transition:all 0.15s;}
+  .btn-delete:hover{background:rgba(255,60,60,0.2);}
+  .empty-table{text-align:center;padding:60px;color:var(--text-muted);font-size:0.9rem;}
+  .empty-table div{font-size:2.5rem;margin-bottom:12px;}
+  .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;color:var(--text-muted);}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent-ig);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:768px){.cal-cell{min-height:70px;padding:6px;}.form-grid{grid-template-columns:1fr;}.gallery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}}
+
+  /* INSTAGRAM GRID VIEW */
+  .grid-view{display:none;}.grid-view.active{display:block;}
+  .ig-profiles{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;}
+  .ig-profile{flex:1;min-width:280px;max-width:420px;}
+  .ig-phone{background:#000;border-radius:36px;padding:12px;box-shadow:0 24px 60px rgba(0,0,0,0.6),0 0 0 1px #333;position:relative;}
+  .ig-phone-notch{width:80px;height:6px;background:#222;border-radius:3px;margin:0 auto 10px;}
+  .ig-screen{background:#fff;border-radius:24px;overflow:hidden;}
+  .ig-topbar{background:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #efefef;}
+  .ig-topbar-name{font-weight:700;font-size:0.85rem;color:#111;font-family:-apple-system,sans-serif;}
+  .ig-topbar-icons{display:flex;gap:10px;color:#111;font-size:1rem;}
+  .ig-profile-header{padding:14px;}
+  .ig-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1rem;font-family:'Syne',sans-serif;margin-bottom:8px;}
+  .ig-stats{display:flex;gap:16px;margin-bottom:8px;}
+  .ig-stat{text-align:center;}
+  .ig-stat strong{display:block;font-size:0.82rem;font-weight:700;color:#111;font-family:-apple-system,sans-serif;}
+  .ig-stat span{font-size:0.68rem;color:#666;font-family:-apple-system,sans-serif;}
+  .ig-bio{font-size:0.75rem;color:#111;font-family:-apple-system,sans-serif;line-height:1.4;margin-bottom:10px;}
+  .ig-follow-btn{background:#0095f6;color:#fff;border:none;width:100%;padding:7px;border-radius:8px;font-weight:600;font-size:0.8rem;cursor:pointer;font-family:-apple-system,sans-serif;margin-bottom:12px;}
+  .ig-tabs{display:flex;border-top:1px solid #efefef;}
+  .ig-tab{flex:1;padding:10px;text-align:center;font-size:1rem;cursor:pointer;border-top:2px solid transparent;}
+  .ig-tab.active{border-top-color:#111;}
+  .ig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#fff;}
+  .ig-cell{position:relative;aspect-ratio:4/5;overflow:hidden;background:#f5f5f5;cursor:pointer;}
+  .ig-cell img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.2s;}
+  .ig-cell:hover img{transform:scale(1.04);}
+  .ig-cell-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:1.4rem;background:#fafafa;}
+  .ig-cell-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.2s;display:flex;align-items:flex-end;padding:5px;}
+  .ig-cell:hover .ig-cell-overlay{background:rgba(0,0,0,0.25);}
+  .ig-type-badge{background:rgba(0,0,0,0.65);color:#fff;padding:2px 5px;border-radius:4px;font-size:0.6rem;font-weight:700;opacity:0;transition:opacity 0.2s;backdrop-filter:blur(4px);}
+  .ig-cell:hover .ig-type-badge{opacity:1;}
+  .ig-reel-icon{position:absolute;top:5px;right:5px;color:#fff;font-size:0.75rem;text-shadow:0 1px 3px rgba(0,0,0,0.6);}
+  .ig-carousel-icon{position:absolute;top:5px;right:5px;color:#fff;font-size:0.75rem;text-shadow:0 1px 3px rgba(0,0,0,0.6);}
+  .ig-profile-label{text-align:center;margin-top:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;color:var(--text-muted);}
+  .ig-draft-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .ig-draft-badge{background:rgba(255,201,74,0.9);color:#000;padding:2px 6px;border-radius:4px;font-size:0.58rem;font-weight:700;}
+  @media(max-width:768px){.cal-cell{min-height:70px;padding:6px;}.form-grid{grid-template-columns:1fr;}.gallery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}}
+</style>
+</head>
+<body>
+
+<!-- MODAL CONTRASEÑA EDICIÓN -->
+<div id="pwOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+  <div style="background:#141417;border:1px solid #2a2a33;border-radius:20px;padding:36px;width:100%;max-width:340px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:12px;">🔐</div>
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:6px;">Modo edición</h2>
+    <p style="color:#7a7a8a;font-size:0.82rem;margin-bottom:24px;font-weight:300;">Ingresa la contraseña para editar</p>
+    <input id="pwInput" type="password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')checkPassword()"
+      style="width:100%;background:#0d0d0f;border:1px solid #2a2a33;color:#f0f0f5;padding:11px 16px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;margin-bottom:10px;text-align:center;letter-spacing:0.1em;">
+    <div id="pwError" style="display:none;color:#ff6060;font-size:0.78rem;margin-bottom:10px;">Contraseña incorrecta</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closePwModal()" style="flex:1;background:transparent;border:1px solid #2a2a33;color:#7a7a8a;padding:11px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;cursor:pointer;">Cancelar</button>
+      <button onclick="checkPassword()" style="flex:2;background:linear-gradient(135deg,#E1306C,#a020f0);color:white;border:none;padding:11px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="brand-area">
+    <h1>Parrilla de Contenido</h1>
+    <p>Calendario editorial · Instagram · Facebook · TikTok</p>
+  </div>
+  
+<div class="header-right">
+<select id="accountSelector" onchange="setAccount(this.value)" style="background:#141417;border:1px solid #2a2a33;color:#f0f0f5;padding:8px 14px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;cursor:pointer;">
+<option value="all">Todas las cuentas</option>
+<option value="muba">🔴 MUBA</option>
+<option value="muba_the_agency">🔵 MUBA THE AGENCY</option>
+<option value="andres_felipe">🟢 ANDRES FELIPE</option>
+</select>
+
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">←</button>
+      <span id="monthLabel"></span>
+      <button onclick="changeMonth(1)">→</button>
+    </div>
+    <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
+    <button id="editModeBtn" class="export-btn" onclick="toggleEditMode()" style="gap:6px;">🔐 Editar</button>
+    <button class="add-btn" onclick="openModal()" style="display:none;">+ Nueva publicación</button>
+  </div>
+</div>
+
+<!-- SYNC STATUS -->
+<div class="sync-bar syncing" id="syncBar">
+  <div class="sync-dot"></div>
+  <span id="syncMsg">Conectando con Google Sheets...</span>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar"></div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">Todas</button>
+    <button class="filter-btn"        data-filter="instagram" onclick="setFilter('instagram',this)">📸 Instagram</button>
+    <button class="filter-btn"        data-filter="facebook"  onclick="setFilter('facebook',this)">👥 Facebook</button>
+    <button class="filter-btn"        data-filter="tiktok"    onclick="setFilter('tiktok',this)">🎵 TikTok</button>
+  </div>
+  <div class="view-toggle">
+    <button class="active" onclick="setView('calendar',this)">📅 Calendario</button>
+    <button onclick="setView('gallery',this)">🖼 Galería</button>
+    <button onclick="setView('list',this)">☰ Lista</button>
+    <button onclick="setView('grid',this)">📱 Grid IG</button>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="calendar-view" id="calendarView">
+  <div class="calendar-header">
+    <div class="cal-day-name">Lun</div><div class="cal-day-name">Mar</div>
+    <div class="cal-day-name">Mié</div><div class="cal-day-name">Jue</div>
+    <div class="cal-day-name">Vie</div><div class="cal-day-name">Sáb</div>
+    <div class="cal-day-name">Dom</div>
+  </div>
+  <div class="calendar-grid" id="calendarGrid">
+    <div class="loading-screen" style="grid-column:1/-1"><div class="spinner"></div><span>Cargando publicaciones...</span></div>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div class="gallery-view" id="galleryView">
+  <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<!-- LIST -->
+<div class="list-view" id="listView">
+  <div class="list-table-wrap">
+    <table class="list-table">
+      <thead>
+        <tr>
+          <th>Imagen</th><th>Fecha & Hora</th><th>Cuenta</th><th>Red Social</th>
+          <th>Tipo</th><th>Copy</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- INSTAGRAM GRID -->
+<div class="grid-view" id="gridView">
+  <div class="ig-profiles" id="igProfiles"></div>
+</div>
+
+<!-- ANALYTICS -->
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="modalTitle">Nueva publicación</h2>
+    </div>
+    <div class="modal-body">
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Cuenta</label>
+        <select id="fAccount" onchange="updateAccountBorder()" style="border-left-width:4px;border-left-color:#FF4D4F;">
+          <option value="muba">🔴 MUBA</option>
+          <option value="muba_the_agency">🔵 MUBA THE AGENCY</option>
+          <option value="andres_felipe">🟢 ANDRES FELIPE</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Red Social</label>
+        <select id="fNetwork">
+          <option value="instagram">📸 Instagram</option>
+          <option value="facebook">👥 Facebook</option>
+          <option value="tiktok">🎵 TikTok</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de contenido</label>
+        <select id="fType" onchange="onTypeChange(this.value)">
+          <option value="Foto">🖼 Foto</option>
+          <option value="Video">🎬 Video</option>
+          <option value="Reel">🎞 Reel</option>
+          <option value="Carrusel">📂 Carrusel</option>
+          <option value="Story">💬 Story</option>
+          <option value="Live">📡 Live</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="fDate">
+      </div>
+      <div class="form-group">
+        <label>Hora</label>
+        <input type="time" id="fTime">
+      </div>
+      <div class="form-group full">
+        <label>Copy / Texto del post</label>
+        <textarea id="fCopy" placeholder="Escribe el texto de la publicación..."></textarea>
+      </div>
+      
+<div class="form-group full">
+<label>Link archivos (Google Drive)</label>
+<input type="text" id="fDrive" placeholder="https://drive.google.com/...">
+</div>
+
+<div class="form-group full">
+        <label>Estado</label>
+
+        <select id="fStatus">
+          <option value="borrador">⚫ Borrador</option>
+          <option value="aprobado">🟡 Aprobado</option>
+          <option value="publicado">🟢 Publicado</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Screenshot / Imagen del post</label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fImage" accept="image/*" onchange="handleImageUpload(event)">
+          <div class="upload-placeholder" id="uploadPlaceholder">
+            <span class="upload-icon">🖼</span>
+            <p>Arrastra una imagen o haz clic para subir</p>
+            <span>PNG, JPG, WEBP — captura del diseño o post publicado</span>
+          </div>
+          <div class="preview-wrap" id="previewWrap">
+            <img id="previewImg" src="" alt="Vista previa">
+            <button class="preview-remove" onclick="removeImage(event)">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARRUSEL UPLOAD (solo visible cuando tipo = Carrusel) -->
+      <div class="form-group full" id="carouselSection" style="display:none;">
+        <label>Fotos del carrusel <span style="color:var(--text-muted);font-weight:300;">(máx. 10)</span></label>
+        <div id="carouselDropZone" style="border:1px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--surface);" onclick="document.getElementById('fCarouselImages').click()" ondragover="event.preventDefault();this.style.borderColor='#E1306C'" ondragleave="this.style.borderColor=''" ondrop="handleCarouselDrop(event)">
+          <input type="file" id="fCarouselImages" accept="image/*" multiple style="display:none;" onchange="handleCarouselUpload(event)">
+          <span style="font-size:1.8rem;">📂</span>
+          <p style="margin:8px 0 4px;font-size:0.85rem;color:var(--text-muted);">Haz clic o arrastra las fotos aquí</p>
+          <span style="font-size:0.75rem;color:var(--text-dim);">PNG, JPG, WEBP · hasta 10 fotos</span>
+        </div>
+        <div id="carouselPreviewStrip" style="display:none;margin-top:12px;">
+          <div id="carouselStrip" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;"></div>
+          <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span id="carouselCount" style="font-size:0.78rem;color:var(--text-muted);"></span>
+            <button onclick="clearCarousel()" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:4px 12px;border-radius:8px;font-size:0.78rem;cursor:pointer;">Limpiar todo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div><!-- end modal-body -->
+    <div class="modal-footer">
+    <div class="modal-actions" id="modalActions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>
+    </div>
+    </div><!-- end modal-footer -->
+  </div>
+</div>
+
+<!-- PREVIEW PANEL (modo lectura) -->
+<div class="modal-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="modal" id="previewBox" style="max-width:520px;padding:0;display:flex;flex-direction:column;max-height:92vh;">
+    <!-- Header sticky -->
+    <div id="previewHeader" style="position:sticky;top:0;z-index:10;padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:20px 20px 0 0;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div id="previewAccDot" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
+        <span id="previewAccLabel" style="font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;"></span>
+        <span id="previewNetBadge" style="font-size:0.72rem;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text-muted);"></span>
+        <span id="previewTypeBadge" style="font-size:0.72rem;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text-muted);"></span>
+      </div>
+      <button onclick="closePreview()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
+    </div>
+    <!-- Body scrollable -->
+    <div style="overflow-y:auto;flex:1;">
+      <div id="previewImgWrap" style="display:none;max-height:280px;overflow:hidden;background:#000;">
+        <img id="previewModalImg" src="" style="width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;" onclick="openLightbox(this.src)">
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;gap:20px;">
+          <div style="text-align:center;">
+            <div id="previewDate" style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;"></div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Fecha</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="previewTime" style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;"></div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">Hora</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="previewStatus" style="font-size:0.8rem;padding:4px 10px;border-radius:20px;font-weight:600;"></div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">Estado</div>
+          </div>
+        </div>
+        <div id="previewCopyWrap" style="display:none;">
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Copy</div>
+          <div id="previewCopy" style="font-size:0.88rem;line-height:1.6;color:var(--text);white-space:pre-wrap;background:var(--surface2);border-radius:10px;padding:12px 14px;"></div>
+        </div>
+        <div id="previewDriveWrap" style="display:none;">
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Archivos</div>
+          <a id="previewDriveLink" href="" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);text-decoration:none;font-size:0.85rem;">
+            📁 <span>Abrir en Google Drive</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    <!-- Botón editar sticky abajo -->
+    <div id="previewEditBtn" style="display:none;padding:12px 20px;border-top:1px solid var(--border);background:var(--surface);border-radius:0 0 20px 20px;flex-shrink:0;">
+      <button style="width:100%;background:linear-gradient(135deg,#E1306C,#a020f0);color:white;border:none;padding:12px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;">✏️ Editar publicación</button>
+    </div>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const API = 'https://sheetdb.io/api/v1/iex5nc7f1j217';
+
+// ── CONTRASEÑA ────────────────────────────────────────────────────────────
+const PASSWORD = 'MubaRedes123789';
+let isAuthenticated = false;
+
+function openPwModal() {
+  const ov = document.getElementById('pwOverlay');
+  ov.style.display = 'flex';
+  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+}
+
+function toggleEditMode() {
+  if (isAuthenticated) {
+    isAuthenticated = false;
+    updateEditUI();
+  } else {
+    openPwModal();
+  }
+}
+function closePwModal() {
+  document.getElementById('pwOverlay').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+}
+function checkPassword() {
+  const input = document.getElementById('pwInput').value;
+  if (input === PASSWORD) {
+    isAuthenticated = true;
+    closePwModal();
+    updateEditUI();
+  } else {
+    const err = document.getElementById('pwError');
+    err.style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+    setTimeout(() => err.style.display = 'none', 2500);
+  }
+}
+function updateEditUI() {
+  const editBtn = document.getElementById('editModeBtn');
+  const addBtn = document.querySelector('.add-btn');
+  if (isAuthenticated) {
+    editBtn.textContent = '✏️ Editando';
+    editBtn.style.borderColor = '#3ddc84';
+    editBtn.style.color = '#3ddc84';
+    if (addBtn) addBtn.style.display = 'flex';
+  } else {
+    editBtn.textContent = '🔐 Editar';
+    editBtn.style.borderColor = '';
+    editBtn.style.color = '';
+    if (addBtn) addBtn.style.display = 'none';
+  }
+}
+
+// CLOUDINARY CONFIG
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtziyjbrg/image/upload";
+const CLOUDINARY_PRESET = "parrilla_uploads";
+
+// ── ACCOUNT COLORS ────────────────────────────────────────────────────────
+const accountColors = {
+  muba:             '#FF4D4F',
+  muba_the_agency:  '#1D4ED8',
+  andres_felipe:    '#10B981'
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let posts = [];
+let currentDate = new Date();
+let currentFilter = 'all';
+let currentView = 'calendar';
+let currentAccount = 'all';
+let editingId = null;
+let pendingImage = null;
+let carouselFiles = [];
+let carouselUrls  = [];
+
+// ── SYNC STATUS UI ────────────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const bar = document.getElementById('syncBar');
+  const txt = document.getElementById('syncMsg');
+  bar.className = 'sync-bar ' + state;
+  txt.textContent = msg;
+}
+
+// ── SHEETDB API ───────────────────────────────────────────────────────────
+async function loadPosts() {
+  try {
+    setSyncStatus('syncing', 'Cargando publicaciones desde Google Sheets...');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(API, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error('Error ' + res.status);
+    const data = await res.json();
+    posts = data.map(row => {
+      const img = row.image || '';
+      if (img && img.includes('CAROUSEL')) console.log('CAROUSEL raw:', JSON.stringify(img));
+      return {
+        id: row.id,
+        network: row.network,
+        type: row.type,
+        date: row.date,
+        time: row.time,
+        copy: row.copy,
+        status: row.status,
+        image: img,
+        drive: row.drive || '',
+        account: row.account || 'muba',
+      };
+    }).filter(p => p.id);
+    setSyncStatus('synced', `✓ Sincronizado · ${posts.length} publicaciones`);
+    render();
+  } catch(e) {
+    setSyncStatus('error', '✗ No se pudo conectar — abre la app desde Netlify para ver los datos');
+    posts = [];
+    render();
+  }
+}
+
+async function createPost(p) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: [p] })
+  });
+  if (!res.ok) throw new Error('Error al guardar');
+}
+
+async function updatePost(id, p) {
+  const res = await fetch(`${API}/id/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: p })
+  });
+  if (!res.ok) throw new Error('Error al actualizar');
+}
+
+async function deletePostAPI(id) {
+  const res = await fetch(`${API}/id/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Error al eliminar');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function getMonthPosts() {
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  return posts.filter(p => {
+    if (!p.date) return false;
+    const d = new Date(p.date + 'T00:00:00');
+    return d.getFullYear() === y && d.getMonth() === m && (currentAccount==='all' || p.account===currentAccount)
+      && (currentFilter === 'all' || p.network === currentFilter);
+  });
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  const mp = getMonthPosts();
+  const total = mp.length;
+  const pub   = mp.filter(p => p.status === 'publicado').length;
+  const apr   = mp.filter(p => p.status === 'aprobado').length;
+  const bor   = mp.filter(p => p.status === 'borrador').length;
+  const withImg = mp.filter(p => p.image && p.image !== 'null' && p.image !== '').length;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(161,139,250,0.12);">📅</div><div class="stat-info"><strong style="color:#a78bfa;">${total}</strong><span>Total</span></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(61,220,132,0.12);">✅</div><div class="stat-info"><strong style="color:var(--green);">${pub}</strong><span>Publicadas</span></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(255,201,74,0.12);">🟡</div><div class="stat-info"><strong style="color:var(--yellow);">${apr}</strong><span>Aprobadas</span></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(120,120,150,0.1);">📝</div><div class="stat-info"><strong style="color:var(--text-muted);">${bor}</strong><span>Borradores</span></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(225,48,108,0.1);">🖼</div><div class="stat-info"><strong style="color:var(--accent-ig);">${withImg}</strong><span>Con imagen</span></div></div>
+  `;
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────
+function renderCalendar() {
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('monthLabel').textContent = `${months[m]} ${y}`;
+  const firstDay = new Date(y, m, 1);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const prevDays = new Date(y, m, 0).getDate();
+  const today = new Date();
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  const mp = getMonthPosts();
+  const postsByDay = {};
+  mp.forEach(p => {
+    const d = new Date(p.date + 'T00:00:00').getDate();
+    if (!postsByDay[d]) postsByDay[d] = [];
+    postsByDay[d].push(p);
+  });
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    let dayNum, isCurrentMonth = true;
+    if (i < startDow) { dayNum = prevDays - startDow + i + 1; isCurrentMonth = false; }
+    else if (i >= startDow + daysInMonth) { dayNum = i - startDow - daysInMonth + 1; isCurrentMonth = false; }
+    else { dayNum = i - startDow + 1; }
+    if (!isCurrentMonth) cell.classList.add('other-month');
+    const isToday = isCurrentMonth && y === today.getFullYear() && m === today.getMonth() && dayNum === today.getDate();
+    if (isToday) cell.classList.add('today');
+    cell.innerHTML = `<div class="day-num">${dayNum}</div>`;
+    if (isCurrentMonth && postsByDay[dayNum]) {
+      const dayPosts = postsByDay[dayNum].sort((a,b) => (a.time||'').localeCompare(b.time||''));
+      const withImg = dayPosts.find(p => p.image && p.image !== 'null' && p.image !== '');
+      if (withImg) {
+        const th = document.createElement('img');
+        th.className = 'cal-thumb'; th.src = withImg.image;
+        th.onclick = e => { e.stopPropagation(); openLightbox(withImg.image); };
+        cell.appendChild(th);
+      }
+      dayPosts.slice(0, 2).forEach(p => {
+        const pill = document.createElement('div');
+        pill.className = `post-pill ${p.network}`;
+        const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
+        const color = accountColors[p.account] || '#888';
+        const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+        pill.style.borderLeft = `4px solid ${color}`;
+        pill.innerHTML = `<span style="background:${color};color:#fff;padding:1px 5px;border-radius:4px;font-size:0.6rem;font-weight:700;flex-shrink:0;white-space:nowrap;">${acLabel}</span> ${icons[p.network]||''} ${p.time||''} ${p.type||''}`;
+        pill.onclick = e => { e.stopPropagation(); openPreview(p.id); };
+        cell.appendChild(pill);
+      });
+      if (dayPosts.length > 2) {
+        const more = document.createElement('div');
+        more.className = 'more-posts';
+        more.textContent = `+${dayPosts.length - 2} más`;
+        more.onclick = e => e.stopPropagation();
+        cell.appendChild(more);
+      }
+    }
+    if (isCurrentMonth) {
+      const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+      cell.addEventListener('click', () => openModal(null, ds));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// ── GALLERY ───────────────────────────────────────────────────────────────
+function renderGallery() {
+  const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+  const grid = document.getElementById('galleryGrid');
+  if (mp.length === 0) { grid.innerHTML = `<div class="empty-table" style="grid-column:1/-1"><div>📭</div>Sin publicaciones este mes</div>`; return; }
+  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
+  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  grid.innerHTML = mp.map(p => {
+    const d = new Date((p.date||'2000-01-01') + 'T00:00:00');
+    const ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+    const hasImg = p.image && p.image !== 'null' && p.image !== '';
+    const acColor = accountColors[p.account] || '#888';
+    const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+    const thumbUrl = getFirstImage(p.image) || p.image;
+    const isCarousel = p.image && p.image.startsWith('CAROUSEL:');
+    const imgHtml = hasImg
+      ? `<img src="${thumbUrl}" alt="screenshot" onclick="event.stopPropagation();openLightbox('${thumbUrl}')">${isCarousel ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:10px;">❏ Carrusel</div>` : ''}`
+      : `<div class="gallery-no-img"><span>🖼</span><p>Sin imagen</p></div>`;
+    return `<div class="gallery-card ${p.network}" onclick="openPreview('${p.id}')" style="border-top:3px solid ${acColor};">
+      <div class="gallery-img-wrap">
+        ${imgHtml}
+        <div class="gallery-network-badge ${p.network}">${icons[p.network]||''} ${labels[p.network]||p.network}</div>
+        <div class="gallery-status ${p.status}"></div>
+      </div>
+      <div class="gallery-info">
+        <div style="margin-bottom:6px;"><span style="background:${acColor};color:#fff;padding:2px 8px;border-radius:5px;font-size:0.68rem;font-weight:700;">${acLabel}</span></div>
+        <div class="gallery-meta">
+          <span class="gallery-date">📅 ${ds} · ${p.time||''}h</span>
+          <span class="gallery-type">${p.type||''}</span>
+        </div>
+        <div class="gallery-copy">${p.copy||'—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── LIST ──────────────────────────────────────────────────────────────────
+function renderList() {
+  const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+  const body = document.getElementById('listBody');
+  if (mp.length === 0) { body.innerHTML = `<tr><td colspan="7"><div class="empty-table"><div>📭</div>Sin publicaciones este mes</div></td></tr>`; return; }
+  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
+  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  body.innerHTML = mp.map(p => {
+    const d = new Date((p.date||'2000-01-01') + 'T00:00:00');
+    const ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
+    const hasImg = p.image && p.image !== 'null' && p.image !== '';
+    const acColor = accountColors[p.account] || '#888';
+    const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+    const listThumb = getFirstImage(p.image) || p.image;
+    const thumbHtml = hasImg
+      ? `<img class="thumb-sm" src="${listThumb}" alt="thumb" onclick="event.stopPropagation();openLightbox('${listThumb}')">`
+      : `<div class="no-thumb">🖼</div>`;
+    return `<tr onclick="openPreview('${p.id}')" style="border-left:3px solid ${acColor};">
+      <td>${thumbHtml}</td>
+      <td><strong>${ds}</strong><br><span style="color:var(--text-muted);font-size:0.78rem;">${p.time||''} h</span></td>
+      <td><span style="background:${acColor};color:#fff;padding:3px 10px;border-radius:6px;font-size:0.73rem;font-weight:700;white-space:nowrap;">${acLabel}</span></td>
+      <td><span class="network-badge ${p.network}">${icons[p.network]||''} ${labels[p.network]||p.network}</span></td>
+      <td><span class="content-type-tag">${p.type||''}</span></td>
+      <td><div class="copy-text">${p.copy||'—'}</div></td>
+      <td><span class="status-dot ${p.status}">${(p.status||'').charAt(0).toUpperCase()+(p.status||'').slice(1)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INSTAGRAM GRID ────────────────────────────────────────────────────────
+function renderGrid() {
+  const accounts = [
+    { key: 'muba',            label: 'MUBA',            handle: '@muba.oficial',      color: '#FF4D4F' },
+    { key: 'muba_the_agency', label: 'MUBA THE AGENCY', handle: '@mubatheagency',     color: '#1D4ED8' },
+    { key: 'andres_felipe',   label: 'ANDRES FELIPE',   handle: '@andresfelipe',      color: '#10B981' },
+  ];
+  const container = document.getElementById('igProfiles');
+
+  // Filter only Instagram posts (Foto, Carrusel, Reel) — Stories y Lives no van en el grid
+  const igPosts = posts
+    .filter(p => p.network === 'instagram' 
+      && ['Foto','Carrusel','Reel'].includes(p.type)
+      && (currentAccount === 'all' || p.account === currentAccount))
+    .sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
+
+  const accountsToShow = currentAccount === 'all'
+    ? accounts
+    : accounts.filter(a => a.key === currentAccount);
+
+  container.innerHTML = accountsToShow.map(acc => {
+    const accPosts = igPosts.filter(p => p.account === acc.key);
+    // Fill grid: show up to 12 posts (4 rows of 3), pad with empty cells
+    const cells = [];
+    for (let i = 0; i < 12; i++) {
+      const p = accPosts[i] || null;
+      if (p) {
+        const hasImg = p.image && p.image !== 'null' && p.image !== '';
+        const igThumb = getFirstImage(p.image) || p.image;
+        const typeIcon = { Reel:'🎬', Video:'🎬', Carrusel:'❏', Story:'💬', Live:'📡', Foto:'' }[p.type] || '';
+        const isDraft = p.status === 'borrador';
+        const isApproved = p.status === 'aprobado';
+        cells.push(`
+          <div class="ig-cell" onclick="openPreview('${p.id}')">
+            ${hasImg
+              ? `<img src="${igThumb}" alt="${p.type}">`
+              : `<div class="ig-cell-empty">🖼</div>`}
+            ${p.type === 'Reel' || p.type === 'Video' ? `<div class="ig-reel-icon">▶</div>` : ''}
+            ${p.type === 'Carrusel' ? `<div class="ig-carousel-icon">❏</div>` : ''}
+            <div class="ig-cell-overlay">
+              <span class="ig-type-badge">${p.type||'Foto'}</span>
+            </div>
+            ${isDraft ? `<div class="ig-draft-overlay"><span class="ig-draft-badge">BORRADOR</span></div>` : ''}
+            ${isApproved ? `<div class="ig-draft-overlay"><span class="ig-draft-badge" style="background:rgba(61,220,132,0.9);">APROBADO</span></div>` : ''}
+          </div>`);
+      } else {
+        cells.push(`<div class="ig-cell"><div class="ig-cell-empty">+</div></div>`);
+      }
+    }
+    const initials = acc.label.split(' ').map(w=>w[0]).join('').slice(0,2);
+    const pubCount = accPosts.filter(p=>p.status==='publicado').length;
+    return `
+      <div class="ig-profile">
+        <div class="ig-phone">
+          <div class="ig-phone-notch"></div>
+          <div class="ig-screen">
+            <div class="ig-topbar">
+              <span class="ig-topbar-name">${acc.handle}</span>
+              <span class="ig-topbar-icons">＋ ☰</span>
+            </div>
+            <div class="ig-profile-header">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+                <div class="ig-avatar" style="background:linear-gradient(135deg,${acc.color},${acc.color}99);">${initials}</div>
+                <div class="ig-stats">
+                  <div class="ig-stat"><strong>${pubCount}</strong><span>publicaciones</span></div>
+                  <div class="ig-stat"><strong>—</strong><span>seguidores</span></div>
+                  <div class="ig-stat"><strong>—</strong><span>siguiendo</span></div>
+                </div>
+              </div>
+              <div class="ig-bio"><strong style="font-size:0.78rem;">${acc.label}</strong><br>📅 Parrilla de contenido</div>
+              <button class="ig-follow-btn">Seguir</button>
+            </div>
+            <div class="ig-tabs">
+              <div class="ig-tab active">⊞</div>
+              <div class="ig-tab">🏷</div>
+            </div>
+            <div class="ig-grid">${cells.join('')}</div>
+          </div>
+        </div>
+        <div class="ig-profile-label" style="color:${acc.color};">● ${acc.label}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  renderStats();
+  if (currentView === 'calendar') renderCalendar();
+  else if (currentView === 'gallery') renderGallery();
+  else if (currentView === 'list') renderList();
+  else if (currentView === 'grid') renderGrid();
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────
+function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); render(); }
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function setAccount(a) {
+  currentAccount = a;
+  render();
+}
+
+function setView(v, btn) {
+  currentView = v;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['calendarView','galleryView','listView','gridView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const map = { calendar:'calendarView', gallery:'galleryView', list:'listView', grid:'gridView' };
+  const target = document.getElementById(map[v]);
+  if (target) target.style.display = 'block';
+  render();
+}
+
+function exportCSV() {
+  const headers = ['id','network','type','date','time','copy','status','image','drive','account'];
+  const rows = posts.map(p => headers.map(h => `"${(p[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const blob = new Blob([headers.join(',') + '\n' + rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'parrilla.csv'; a.click();
+}
+
+// ── CAROUSEL ──────────────────────────────────────────────────────────────
+function onTypeChange(type) {
+  const uploadZone = document.getElementById('uploadZone');
+  const carouselSection = document.getElementById('carouselSection');
+  if (!uploadZone || !carouselSection) return;
+  const singleGroup = uploadZone.closest('.form-group') || uploadZone.parentElement;
+  if (type === 'Carrusel') {
+    singleGroup.style.display = 'none';
+    carouselSection.style.display = 'block';
+  } else {
+    singleGroup.style.display = 'block';
+    carouselSection.style.display = 'none';
+  }
+}
+// SheetDB sometimes escapes quotes or adds backslashes — this handles all variants
+function parseCarouselImages(raw) {
+  if (!raw || raw === 'null' || raw === '') return null;
+  if (raw.startsWith('CAROUSEL:')) {
+    const urls = raw.slice(9).split('|').filter(u => u.trim());
+    return urls.length > 0 ? urls : null;
+  }
+  if (raw.trim().startsWith('[')) {
+    let str = raw.replace(/\\"/g, '"').replace(/""/g, '"');
+    try {
+      const arr = JSON.parse(str);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    } catch(e) {}
+    const urls = str.match(/https?:\/\/[^\s"',\]]+/g);
+    if (urls && urls.length > 0) return urls;
+  }
+  return null;
+}
+
+// Returns first image URL for thumbnails — handles single image and carousel
+function getFirstImage(imageField) {
+  if (!imageField || imageField === 'null' || imageField === '') return null;
+  if (imageField.startsWith('CAROUSEL:')) {
+    const first = imageField.slice(9).split('|')[0].trim();
+    return first || null;
+  }
+  if (imageField.trim().startsWith('[')) {
+    try {
+      const arr = JSON.parse(imageField);
+      if (Array.isArray(arr) && arr[0]) return arr[0];
+    } catch(e) {}
+    const m = imageField.match(/https?:\/\/[^\s"',\]]+/);
+    return m ? m[0] : null;
+  }
+  return imageField;
+}
+
+function handleCarouselUpload(event) {
+  addCarouselFiles(Array.from(event.target.files));
+  event.target.value = '';
+}
+
+function handleCarouselDrop(event) {
+  event.preventDefault();
+  document.getElementById('carouselDropZone').style.borderColor = '';
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  addCarouselFiles(files);
+}
+
+function addCarouselFiles(files) {
+  const remaining = 10 - carouselFiles.length - carouselUrls.length;
+  if (remaining <= 0) { alert('Máximo 10 fotos por carrusel'); return; }
+  files.slice(0, remaining).forEach(file => {
+    carouselFiles.push({ file, objUrl: URL.createObjectURL(file) });
+  });
+  renderCarouselStrip();
+}
+
+function removeCarouselItem(index, isUrl) {
+  if (isUrl) {
+    carouselUrls.splice(index, 1);
+  } else {
+    URL.revokeObjectURL(carouselFiles[index].objUrl);
+    carouselFiles.splice(index, 1);
+  }
+  renderCarouselStrip();
+}
+
+function renderCarouselStrip() {
+  const strip = document.getElementById('carouselStrip');
+  const wrap  = document.getElementById('carouselPreviewStrip');
+  const count = document.getElementById('carouselCount');
+  const total = carouselUrls.length + carouselFiles.length;
+
+  if (total === 0) { wrap.style.display = 'none'; strip.innerHTML = ''; return; }
+  wrap.style.display = 'block';
+  count.textContent = `${total} foto${total !== 1 ? 's' : ''} · desliza para ver todas`;
+
+  strip.innerHTML = '';
+
+  carouselUrls.forEach((url, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'carousel-thumb';
+    const img = document.createElement('img');
+    img.src = url;
+    img.onclick = () => openLightbox(url);
+    const num = document.createElement('span');
+    num.className = 'carousel-thumb-num';
+    num.textContent = i + 1;
+    const del = document.createElement('button');
+    del.className = 'carousel-thumb-del';
+    del.textContent = '✕';
+    del.onclick = () => removeCarouselItem(i, true);
+    thumb.appendChild(img); thumb.appendChild(num); thumb.appendChild(del);
+    strip.appendChild(thumb);
+  });
+
+  carouselFiles.forEach((item, i) => {
+    const num = carouselUrls.length + i + 1;
+    const thumb = document.createElement('div');
+    thumb.className = 'carousel-thumb';
+    const img = document.createElement('img');
+    img.src = item.objUrl;
+    const numEl = document.createElement('span');
+    numEl.className = 'carousel-thumb-num';
+    numEl.textContent = num;
+    const del = document.createElement('button');
+    del.className = 'carousel-thumb-del';
+    del.textContent = '✕';
+    del.onclick = () => removeCarouselItem(i, false);
+    thumb.appendChild(img); thumb.appendChild(numEl); thumb.appendChild(del);
+    strip.appendChild(thumb);
+  });
+}
+
+function clearCarousel() {
+  carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl));
+  carouselFiles = [];
+  carouselUrls  = [];
+  renderCarouselStrip();
+}
+
+async function uploadCarouselFiles() {
+  const uploaded = [];
+  for (const item of carouselFiles) {
+    const url = await uploadToCloudinary(item.file);
+    uploaded.push(url);
+  }
+  return [...carouselUrls, ...uploaded];
+}
+function showPreview(url) {
+  const wrap = document.getElementById('previewWrap');
+  const img = document.getElementById('previewImg');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  if (!wrap || !img) return;
+  img.src = url;
+  wrap.style.display = 'block';
+  if (placeholder) placeholder.style.display = 'none';
+}
+
+function clearPreview() {
+  pendingImage = null;
+  const wrap = document.getElementById('previewWrap');
+  const img = document.getElementById('previewImg');
+  const placeholder = document.getElementById('uploadPlaceholder');
+  if (wrap) wrap.style.display = 'none';
+  if (img) img.src = '';
+  if (placeholder) placeholder.style.display = 'flex';
+}
+
+function removeImage(e) { e.stopPropagation(); clearPreview(); }
+
+function updateAccountBorder() {
+  const acc = document.getElementById('fAccount') ? document.getElementById('fAccount').value : 'muba';
+  const color = accountColors[acc] || '#888';
+  const modal = document.querySelector('.modal-box');
+  if (modal) modal.style.borderTop = `4px solid ${color}`;
+}
+
+// ── PREVIEW (modo lectura) ────────────────────────────────────────────────
+let currentPreviewId = null;
+
+function openPreview(id) {
+  const p = posts.find(x => x.id == id);
+  if (!p) return;
+  currentPreviewId = id;
+  const color = accountColors[p.account] || '#888';
+  const accLabels = { muba:'MUBA', muba_the_agency:'MUBA THE AGENCY', andres_felipe:'ANDRES FELIPE' };
+  const statusStyles = { borrador:'background:#2a2a33;color:#7a7a8a;', aprobado:'background:rgba(255,201,74,0.15);color:#ffc94a;', publicado:'background:rgba(61,220,132,0.15);color:#3ddc84;' };
+  const statusLabels = { borrador:'⚫ Borrador', aprobado:'🟡 Aprobado', publicado:'🟢 Publicado' };
+  const netIcons = { instagram:'📸 Instagram', facebook:'👥 Facebook', tiktok:'🎵 TikTok' };
+
+  document.getElementById('previewAccDot').style.background = color;
+  document.getElementById('previewAccLabel').textContent = accLabels[p.account] || p.account;
+  document.getElementById('previewNetBadge').textContent = netIcons[p.network] || p.network;
+  document.getElementById('previewTypeBadge').textContent = p.type || '';
+  document.getElementById('previewDate').textContent = p.date || '—';
+  document.getElementById('previewTime').textContent = p.time || '—';
+  document.getElementById('previewStatus').textContent = statusLabels[p.status] || p.status;
+  document.getElementById('previewStatus').style.cssText = statusStyles[p.status] || '';
+  document.getElementById('previewBox').style.borderTop = `4px solid ${color}`;
+
+  const imgWrap = document.getElementById('previewImgWrap');
+  imgWrap.innerHTML = '';
+  if (p.image && p.image !== 'null' && p.image !== '') {
+    let carouselImgs = null;
+    try { carouselImgs = parseCarouselImages(p.image); } catch(e) {}
+
+    if (carouselImgs && carouselImgs.length > 0) {
+      // Build carousel strip with DOM methods
+      const outer = document.createElement('div');
+      outer.style.cssText = 'overflow-x:auto;padding:10px;background:#000;scroll-snap-type:x mandatory;';
+      const inner = document.createElement('div');
+      inner.style.cssText = 'display:flex;gap:6px;width:max-content;';
+      carouselImgs.forEach((url, i) => {
+        const wrap2 = document.createElement('div');
+        wrap2.style.cssText = 'position:relative;flex-shrink:0;scroll-snap-align:start;';
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = 'height:240px;width:auto;max-width:280px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block;';
+        img.onclick = () => openLightbox(url);
+        const badge = document.createElement('span');
+        badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.65);color:#fff;font-size:0.65rem;font-weight:700;border-radius:4px;padding:2px 6px;';
+        badge.textContent = `${i+1}/${carouselImgs.length}`;
+        wrap2.appendChild(img);
+        wrap2.appendChild(badge);
+        inner.appendChild(wrap2);
+      });
+      outer.appendChild(inner);
+      imgWrap.appendChild(outer);
+      imgWrap.style.display = 'block';
+    } else {
+      const img = document.createElement('img');
+      img.src = p.image;
+      img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;';
+      img.onclick = () => openLightbox(p.image);
+      imgWrap.appendChild(img);
+      imgWrap.style.display = 'block';
+    }
+  } else {
+    imgWrap.style.display = 'none';
+  }
+
+  const copyWrap = document.getElementById('previewCopyWrap');
+  if (p.copy && p.copy.trim()) {
+    document.getElementById('previewCopy').textContent = p.copy;
+    copyWrap.style.display = 'block';
+  } else { copyWrap.style.display = 'none'; }
+
+  const driveWrap = document.getElementById('previewDriveWrap');
+  if (p.drive && p.drive.trim()) {
+    document.getElementById('previewDriveLink').href = p.drive;
+    driveWrap.style.display = 'block';
+  } else { driveWrap.style.display = 'none'; }
+
+  const editBtn = document.getElementById('previewEditBtn');
+  editBtn.style.display = isAuthenticated ? 'block' : 'none';
+  editBtn.querySelector('button').onclick = () => { closePreview(); openModal(id); };
+  document.getElementById('previewOverlay').classList.add('open');
+}
+
+function closePreview() {
+  document.getElementById('previewOverlay').classList.remove('open');
+}
+
+function openModal(id = null, prefillDate = null) {
+  if (!isAuthenticated) {
+    if (id) { openPreview(id); return; }
+    return;
+  }
+  editingId = id;
+  carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl));
+  carouselFiles = []; carouselUrls = [];
+  clearPreview();
+  const today = new Date().toISOString().split('T')[0];
+  if (id) {
+    const p = posts.find(x => x.id == id);
+    if (!p) return;
+    document.getElementById('modalTitle').textContent = 'Editar publicación';
+    document.getElementById('fAccount').value = p.account || 'muba';
+    document.getElementById('fNetwork').value = p.network || 'instagram';
+    document.getElementById('fType').value    = p.type    || 'Foto';
+    document.getElementById('fDate').value    = p.date    || today;
+    document.getElementById('fTime').value    = p.time    || '10:00';
+    document.getElementById('fCopy').value    = p.copy    || '';
+    document.getElementById('fStatus').value  = p.status  || 'borrador';
+    document.getElementById('fDrive').value   = p.drive   || '';
+    if (p.type === 'Carrusel' && p.image) {
+      const imgs = parseCarouselImages(p.image);
+      if (imgs) { carouselUrls = imgs; renderCarouselStrip(); }
+      else if (p.image !== 'null') { carouselUrls = [p.image]; renderCarouselStrip(); }
+    } else if (p.image && p.image !== 'null' && p.image !== '') {
+      pendingImage = p.image; showPreview(p.image);
+    }
+    onTypeChange(p.type || 'Foto');
+    updateAccountBorder();
+    document.getElementById('modalActions').innerHTML = `
+      <button class="btn-delete" onclick="deletePost()">Eliminar</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
+  } else {
+    document.getElementById('modalTitle').textContent = 'Nueva publicación';
+    document.getElementById('fAccount').value = currentAccount !== 'all' ? currentAccount : 'muba';
+    document.getElementById('fNetwork').value = 'instagram';
+    document.getElementById('fType').value    = 'Foto';
+    document.getElementById('fDate').value    = prefillDate || today;
+    document.getElementById('fTime').value    = '10:00';
+    document.getElementById('fCopy').value    = '';
+    document.getElementById('fStatus').value  = 'borrador';
+    document.getElementById('fDrive').value   = '';
+    onTypeChange('Foto');
+    updateAccountBorder();
+    document.getElementById('modalActions').innerHTML = `
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingId = null; pendingImage = null;
+}
+
+function setBtnLoading(loading) {
+  const btn = document.getElementById('btnSave');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Guardando…' : 'Guardar';
+}
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  const errMsg = data.error?.message || JSON.stringify(data);
+  throw new Error('Cloudinary: ' + errMsg);
+}
+
+async function savePost() {
+  if (!isAuthenticated) return;
+  setBtnLoading(true);
+  try {
+    const type = document.getElementById('fType').value;
+    let imageUrl = pendingImage || '';
+
+    if (type === 'Carrusel') {
+      // Upload any new files, combine with existing URLs
+      if (carouselFiles.length > 0) {
+        const btn = document.getElementById('btnSave');
+        if (btn) btn.textContent = `Subiendo fotos (0/${carouselFiles.length})…`;
+        const newUrls = [];
+        for (let i = 0; i < carouselFiles.length; i++) {
+          try {
+            if (btn) btn.textContent = `Subiendo fotos (${i+1}/${carouselFiles.length})…`;
+            const url = await uploadToCloudinary(carouselFiles[i].file);
+            newUrls.push(url);
+          } catch(e) {
+            setBtnLoading(false);
+            alert('Error subiendo foto ' + (i+1) + ': ' + e.message);
+            return;
+          }
+        }
+        carouselUrls = [...carouselUrls, ...newUrls];
+        carouselFiles = [];
+      }
+      imageUrl = carouselUrls.length > 0 ? 'CAROUSEL:' + carouselUrls.join('|') : '';
+    } else {
+      const fileInput = document.getElementById('fImage');
+      if (fileInput && fileInput.files && fileInput.files[0]) {
+        try {
+          imageUrl = await uploadToCloudinary(fileInput.files[0]);
+        } catch(e) {
+          setBtnLoading(false);
+          alert('Error subiendo imagen: ' + e.message);
+          return;
+        }
+      }
+    }
+    const p = {
+      network:  document.getElementById('fNetwork').value,
+      type:     document.getElementById('fType').value,
+      date:     document.getElementById('fDate').value,
+      time:     document.getElementById('fTime').value,
+      copy:     document.getElementById('fCopy').value,
+      status:   document.getElementById('fStatus').value,
+      image:    imageUrl,
+      drive:    document.getElementById('fDrive').value,
+      account:  document.getElementById('fAccount').value,
+    };
+    if (editingId) {
+      await updatePost(editingId, p);
+      const idx = posts.findIndex(x => x.id == editingId);
+      if (idx > -1) posts[idx] = { ...posts[idx], ...p };
+    } else {
+      p.id = Date.now();
+      await createPost(p);
+      posts.push(p);
+    }
+    closeModal(); render();
+  } catch(e) {
+    alert('Error guardando: ' + e.message);
+  } finally { setBtnLoading(false); }
+}
+
+async function deletePost() {
+  if (!isAuthenticated) return;
+  if (!editingId || !confirm('¿Eliminar esta publicación?')) return;
+  await deletePostAPI(editingId);
+  posts = posts.filter(x => x.id != editingId);
+  closeModal(); render();
+}
+
+function handleImageUpload(e) {
+  const file = (e.target || e).files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { pendingImage = ev.target.result; showPreview(ev.target.result); };
+  reader.readAsDataURL(file);
+}
+
+function openLightbox(url) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  if (!lb || !img) return;
+  img.src = url;
+  lb.classList.add('open');
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('lightbox');
+  if (lb) lb.classList.remove('open');
+}
+
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+// Load posts directly on page load — no password needed to view
+window.onload = function() {
+  ['galleryView','listView','gridView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  loadPosts();
+};
+</script>
+</body>
+</html>
