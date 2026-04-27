@@ -229,7 +229,6 @@
 </head>
 <body>
 
-<!-- MODAL CONTRASEÑA EDICIÓN -->
 <div id="pwOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
   <div style="background:#141417;border:1px solid #2a2a33;border-radius:20px;padding:36px;width:100%;max-width:340px;text-align:center;">
     <div style="font-size:2rem;margin-bottom:12px;">🔐</div>
@@ -245,7 +244,6 @@
   </div>
 </div>
 
-<!-- HEADER -->
 <div class="header">
   <div class="brand-area">
     <h1>Parrilla de Contenido</h1>
@@ -271,16 +269,13 @@
   </div>
 </div>
 
-<!-- SYNC STATUS -->
 <div class="sync-bar syncing" id="syncBar">
   <div class="sync-dot"></div>
   <span id="syncMsg">Conectando con Google Sheets...</span>
 </div>
 
-<!-- STATS -->
 <div class="stats-bar" id="statsBar"></div>
 
-<!-- CONTROLS -->
 <div class="controls">
   <div class="filters">
     <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">Todas</button>
@@ -296,7 +291,6 @@
   </div>
 </div>
 
-<!-- CALENDAR -->
 <div class="calendar-view" id="calendarView">
   <div class="calendar-header">
     <div class="cal-day-name">Lun</div><div class="cal-day-name">Mar</div>
@@ -309,12 +303,10 @@
   </div>
 </div>
 
-<!-- GALLERY -->
 <div class="gallery-view" id="galleryView">
   <div class="gallery-grid" id="galleryGrid"></div>
 </div>
 
-<!-- LIST -->
 <div class="list-view" id="listView">
   <div class="list-table-wrap">
     <table class="list-table">
@@ -329,14 +321,10 @@
   </div>
 </div>
 
-<!-- INSTAGRAM GRID -->
 <div class="grid-view" id="gridView">
   <div class="ig-profiles" id="igProfiles"></div>
 </div>
 
-<!-- ANALYTICS -->
-
-<!-- POST MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-header">
@@ -415,7 +403,6 @@
         </div>
       </div>
 
-      <!-- CARRUSEL UPLOAD (solo visible cuando tipo = Carrusel) -->
       <div class="form-group full" id="carouselSection" style="display:none;">
         <label>Fotos del carrusel <span style="color:var(--text-muted);font-weight:300;">(máx. 10)</span></label>
         <div id="carouselDropZone" style="border:1px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.2s;background:var(--surface);" onclick="document.getElementById('fCarouselImages').click()" ondragover="event.preventDefault();this.style.borderColor='#E1306C'" ondragleave="this.style.borderColor=''" ondrop="handleCarouselDrop(event)">
@@ -433,20 +420,16 @@
         </div>
       </div>
     </div>
-    </div><!-- end modal-body -->
-    <div class="modal-footer">
+    </div><div class="modal-footer">
     <div class="modal-actions" id="modalActions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>
     </div>
-    </div><!-- end modal-footer -->
-  </div>
+    </div></div>
 </div>
 
-<!-- PREVIEW PANEL (modo lectura) -->
 <div class="modal-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
   <div class="modal" id="previewBox" style="max-width:520px;padding:0;display:flex;flex-direction:column;max-height:92vh;">
-    <!-- Header sticky -->
     <div id="previewHeader" style="position:sticky;top:0;z-index:10;padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:20px 20px 0 0;flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <div id="previewAccDot" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;"></div>
@@ -456,7 +439,6 @@
       </div>
       <button onclick="closePreview()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
     </div>
-    <!-- Body scrollable -->
     <div style="overflow-y:auto;flex:1;">
       <div id="previewImgWrap" style="display:none;max-height:280px;overflow:hidden;background:#000;">
         <img id="previewModalImg" src="" style="width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;" onclick="openLightbox(this.src)">
@@ -488,7 +470,6 @@
         </div>
       </div>
     </div>
-    <!-- Botón editar sticky abajo -->
     <div id="previewEditBtn" style="display:none;padding:12px 20px;border-top:1px solid var(--border);background:var(--surface);border-radius:0 0 20px 20px;flex-shrink:0;">
       <button style="width:100%;background:linear-gradient(135deg,#E1306C,#a020f0);color:white;border:none;padding:12px;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;">✏️ Editar publicación</button>
     </div>
@@ -598,7 +579,6 @@ async function loadPosts() {
     const data = await res.json();
     posts = data.map(row => {
       const img = row.image || '';
-      if (img && img.includes('CAROUSEL')) console.log('CAROUSEL raw:', JSON.stringify(img));
       return {
         id: row.id,
         network: row.network,
@@ -615,7 +595,7 @@ async function loadPosts() {
     setSyncStatus('synced', `✓ Sincronizado · ${posts.length} publicaciones`);
     render();
   } catch(e) {
-    setSyncStatus('error', '✗ No se pudo conectar — abre la app desde Netlify para ver los datos');
+    setSyncStatus('error', '✗ No se pudo conectar con los datos');
     posts = [];
     render();
   }
@@ -709,8 +689,8 @@ function renderCalendar() {
       const withImg = dayPosts.find(p => p.image && p.image !== 'null' && p.image !== '');
       if (withImg) {
         const th = document.createElement('img');
-        th.className = 'cal-thumb'; th.src = withImg.image;
-        th.onclick = e => { e.stopPropagation(); openLightbox(withImg.image); };
+        th.className = 'cal-thumb'; th.src = getFirstImage(withImg.image);
+        th.onclick = e => { e.stopPropagation(); openLightbox(getFirstImage(withImg.image)); };
         cell.appendChild(th);
       }
       dayPosts.slice(0, 2).forEach(p => {
@@ -753,7 +733,7 @@ function renderGallery() {
     const hasImg = p.image && p.image !== 'null' && p.image !== '';
     const acColor = accountColors[p.account] || '#888';
     const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
-    const thumbUrl = getFirstImage(p.image) || p.image;
+    const thumbUrl = getFirstImage(p.image);
     const isCarousel = p.image && p.image.startsWith('CAROUSEL:');
     const imgHtml = hasImg
       ? `<img src="${thumbUrl}" alt="screenshot" onclick="event.stopPropagation();openLightbox('${thumbUrl}')">${isCarousel ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:10px;">❏ Carrusel</div>` : ''}`
@@ -789,7 +769,7 @@ function renderList() {
     const hasImg = p.image && p.image !== 'null' && p.image !== '';
     const acColor = accountColors[p.account] || '#888';
     const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
-    const listThumb = getFirstImage(p.image) || p.image;
+    const listThumb = getFirstImage(p.image);
     const thumbHtml = hasImg
       ? `<img class="thumb-sm" src="${listThumb}" alt="thumb" onclick="event.stopPropagation();openLightbox('${listThumb}')">`
       : `<div class="no-thumb">🖼</div>`;
@@ -814,7 +794,6 @@ function renderGrid() {
   ];
   const container = document.getElementById('igProfiles');
 
-  // Filter only Instagram posts (Foto, Carrusel, Reel) — Stories y Lives no van en el grid
   const igPosts = posts
     .filter(p => p.network === 'instagram' 
       && ['Foto','Carrusel','Reel'].includes(p.type)
@@ -827,14 +806,12 @@ function renderGrid() {
 
   container.innerHTML = accountsToShow.map(acc => {
     const accPosts = igPosts.filter(p => p.account === acc.key);
-    // Fill grid: show up to 12 posts (4 rows of 3), pad with empty cells
     const cells = [];
     for (let i = 0; i < 12; i++) {
       const p = accPosts[i] || null;
       if (p) {
         const hasImg = p.image && p.image !== 'null' && p.image !== '';
-        const igThumb = getFirstImage(p.image) || p.image;
-        const typeIcon = { Reel:'🎬', Video:'🎬', Carrusel:'❏', Story:'💬', Live:'📡', Foto:'' }[p.type] || '';
+        const igThumb = getFirstImage(p.image);
         const isDraft = p.status === 'borrador';
         const isApproved = p.status === 'aprobado';
         cells.push(`
@@ -949,39 +926,21 @@ function onTypeChange(type) {
     carouselSection.style.display = 'none';
   }
 }
-// SheetDB sometimes escapes quotes or adds backslashes — this handles all variants
+
 function parseCarouselImages(raw) {
   if (!raw || raw === 'null' || raw === '') return null;
   if (raw.startsWith('CAROUSEL:')) {
-    const urls = raw.slice(9).split('|').filter(u => u.trim());
+    const urls = raw.replace('CAROUSEL:', '').split('|').filter(u => u.trim());
     return urls.length > 0 ? urls : null;
-  }
-  if (raw.trim().startsWith('[')) {
-    let str = raw.replace(/\\"/g, '"').replace(/""/g, '"');
-    try {
-      const arr = JSON.parse(str);
-      if (Array.isArray(arr) && arr.length > 0) return arr;
-    } catch(e) {}
-    const urls = str.match(/https?:\/\/[^\s"',\]]+/g);
-    if (urls && urls.length > 0) return urls;
   }
   return null;
 }
 
-// Returns first image URL for thumbnails — handles single image and carousel
 function getFirstImage(imageField) {
   if (!imageField || imageField === 'null' || imageField === '') return null;
   if (imageField.startsWith('CAROUSEL:')) {
-    const first = imageField.slice(9).split('|')[0].trim();
-    return first || null;
-  }
-  if (imageField.trim().startsWith('[')) {
-    try {
-      const arr = JSON.parse(imageField);
-      if (Array.isArray(arr) && arr[0]) return arr[0];
-    } catch(e) {}
-    const m = imageField.match(/https?:\/\/[^\s"',\]]+/);
-    return m ? m[0] : null;
+    const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim());
+    return urls.length > 0 ? urls[0] : null;
   }
   return imageField;
 }
@@ -1025,7 +984,7 @@ function renderCarouselStrip() {
 
   if (total === 0) { wrap.style.display = 'none'; strip.innerHTML = ''; return; }
   wrap.style.display = 'block';
-  count.textContent = `${total} foto${total !== 1 ? 's' : ''} · desliza para ver todas`;
+  count.textContent = `${total} foto${total !== 1 ? 's' : ''}`;
 
   strip.innerHTML = '';
 
@@ -1071,14 +1030,6 @@ function clearCarousel() {
   renderCarouselStrip();
 }
 
-async function uploadCarouselFiles() {
-  const uploaded = [];
-  for (const item of carouselFiles) {
-    const url = await uploadToCloudinary(item.file);
-    uploaded.push(url);
-  }
-  return [...carouselUrls, ...uploaded];
-}
 function showPreview(url) {
   const wrap = document.getElementById('previewWrap');
   const img = document.getElementById('previewImg');
@@ -1088,6 +1039,8 @@ function showPreview(url) {
   wrap.style.display = 'block';
   if (placeholder) placeholder.style.display = 'none';
 }
+
+function removeImage(e) { e.stopPropagation(); clearPreview(); }
 
 function clearPreview() {
   pendingImage = null;
@@ -1099,148 +1052,90 @@ function clearPreview() {
   if (placeholder) placeholder.style.display = 'flex';
 }
 
-function removeImage(e) { e.stopPropagation(); clearPreview(); }
-
 function updateAccountBorder() {
   const acc = document.getElementById('fAccount') ? document.getElementById('fAccount').value : 'muba';
   const color = accountColors[acc] || '#888';
-  const modal = document.querySelector('.modal-box');
-  if (modal) modal.style.borderTop = `4px solid ${color}`;
 }
 
-// ── PREVIEW (modo lectura) ────────────────────────────────────────────────
-let currentPreviewId = null;
-
+// ── PREVIEW ──
 function openPreview(id) {
   const p = posts.find(x => x.id == id);
   if (!p) return;
-  currentPreviewId = id;
   const color = accountColors[p.account] || '#888';
-  const accLabels = { muba:'MUBA', muba_the_agency:'MUBA THE AGENCY', andres_felipe:'ANDRES FELIPE' };
   const statusStyles = { borrador:'background:#2a2a33;color:#7a7a8a;', aprobado:'background:rgba(255,201,74,0.15);color:#ffc94a;', publicado:'background:rgba(61,220,132,0.15);color:#3ddc84;' };
   const statusLabels = { borrador:'⚫ Borrador', aprobado:'🟡 Aprobado', publicado:'🟢 Publicado' };
-  const netIcons = { instagram:'📸 Instagram', facebook:'👥 Facebook', tiktok:'🎵 TikTok' };
 
   document.getElementById('previewAccDot').style.background = color;
-  document.getElementById('previewAccLabel').textContent = accLabels[p.account] || p.account;
-  document.getElementById('previewNetBadge').textContent = netIcons[p.network] || p.network;
-  document.getElementById('previewTypeBadge').textContent = p.type || '';
-  document.getElementById('previewDate').textContent = p.date || '—';
-  document.getElementById('previewTime').textContent = p.time || '—';
-  document.getElementById('previewStatus').textContent = statusLabels[p.status] || p.status;
-  document.getElementById('previewStatus').style.cssText = statusStyles[p.status] || '';
-  document.getElementById('previewBox').style.borderTop = `4px solid ${color}`;
+  document.getElementById('previewAccLabel').textContent = p.account;
+  document.getElementById('previewNetBadge').textContent = p.network;
+  document.getElementById('previewTypeBadge').textContent = p.type;
+  document.getElementById('previewDate').textContent = p.date;
+  document.getElementById('previewTime').textContent = p.time;
+  document.getElementById('previewStatus').textContent = statusLabels[p.status];
+  document.getElementById('previewStatus').style.cssText = statusStyles[p.status];
 
   const imgWrap = document.getElementById('previewImgWrap');
   imgWrap.innerHTML = '';
-  if (p.image && p.image !== 'null' && p.image !== '') {
-    let carouselImgs = null;
-    try { carouselImgs = parseCarouselImages(p.image); } catch(e) {}
-
-    if (carouselImgs && carouselImgs.length > 0) {
-      // Build carousel strip with DOM methods
-      const outer = document.createElement('div');
-      outer.style.cssText = 'overflow-x:auto;padding:10px;background:#000;scroll-snap-type:x mandatory;';
-      const inner = document.createElement('div');
-      inner.style.cssText = 'display:flex;gap:6px;width:max-content;';
-      carouselImgs.forEach((url, i) => {
-        const wrap2 = document.createElement('div');
-        wrap2.style.cssText = 'position:relative;flex-shrink:0;scroll-snap-align:start;';
-        const img = document.createElement('img');
-        img.src = url;
-        img.style.cssText = 'height:240px;width:auto;max-width:280px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block;';
-        img.onclick = () => openLightbox(url);
-        const badge = document.createElement('span');
-        badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.65);color:#fff;font-size:0.65rem;font-weight:700;border-radius:4px;padding:2px 6px;';
-        badge.textContent = `${i+1}/${carouselImgs.length}`;
-        wrap2.appendChild(img);
-        wrap2.appendChild(badge);
-        inner.appendChild(wrap2);
-      });
-      outer.appendChild(inner);
-      imgWrap.appendChild(outer);
-      imgWrap.style.display = 'block';
-    } else {
+  if (p.image && p.image !== 'null') {
+    const urls = parseCarouselImages(p.image) || [p.image];
+    urls.forEach(url => {
       const img = document.createElement('img');
-      img.src = p.image;
+      img.src = url;
       img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;';
-      img.onclick = () => openLightbox(p.image);
+      img.onclick = () => openLightbox(url);
       imgWrap.appendChild(img);
-      imgWrap.style.display = 'block';
-    }
+    });
+    imgWrap.style.display = 'block';
   } else {
     imgWrap.style.display = 'none';
   }
 
-  const copyWrap = document.getElementById('previewCopyWrap');
-  if (p.copy && p.copy.trim()) {
-    document.getElementById('previewCopy').textContent = p.copy;
-    copyWrap.style.display = 'block';
-  } else { copyWrap.style.display = 'none'; }
-
-  const driveWrap = document.getElementById('previewDriveWrap');
-  if (p.drive && p.drive.trim()) {
-    document.getElementById('previewDriveLink').href = p.drive;
-    driveWrap.style.display = 'block';
-  } else { driveWrap.style.display = 'none'; }
+  document.getElementById('previewCopy').textContent = p.copy;
+  document.getElementById('previewCopyWrap').style.display = p.copy ? 'block' : 'none';
+  
+  const driveLink = document.getElementById('previewDriveLink');
+  driveLink.href = p.drive;
+  document.getElementById('previewDriveWrap').style.display = p.drive ? 'block' : 'none';
 
   const editBtn = document.getElementById('previewEditBtn');
   editBtn.style.display = isAuthenticated ? 'block' : 'none';
   editBtn.querySelector('button').onclick = () => { closePreview(); openModal(id); };
+  
   document.getElementById('previewOverlay').classList.add('open');
 }
 
-function closePreview() {
-  document.getElementById('previewOverlay').classList.remove('open');
-}
+function closePreview() { document.getElementById('previewOverlay').classList.remove('open'); }
 
 function openModal(id = null, prefillDate = null) {
-  if (!isAuthenticated) {
-    if (id) { openPreview(id); return; }
-    return;
-  }
+  if (!isAuthenticated) return;
   editingId = id;
-  carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl));
-  carouselFiles = []; carouselUrls = [];
+  clearCarousel();
   clearPreview();
-  const today = new Date().toISOString().split('T')[0];
   if (id) {
     const p = posts.find(x => x.id == id);
-    if (!p) return;
-    document.getElementById('modalTitle').textContent = 'Editar publicación';
-    document.getElementById('fAccount').value = p.account || 'muba';
-    document.getElementById('fNetwork').value = p.network || 'instagram';
-    document.getElementById('fType').value    = p.type    || 'Foto';
-    document.getElementById('fDate').value    = p.date    || today;
-    document.getElementById('fTime').value    = p.time    || '10:00';
-    document.getElementById('fCopy').value    = p.copy    || '';
-    document.getElementById('fStatus').value  = p.status  || 'borrador';
-    document.getElementById('fDrive').value   = p.drive   || '';
-    if (p.type === 'Carrusel' && p.image) {
-      const imgs = parseCarouselImages(p.image);
-      if (imgs) { carouselUrls = imgs; renderCarouselStrip(); }
-      else if (p.image !== 'null') { carouselUrls = [p.image]; renderCarouselStrip(); }
-    } else if (p.image && p.image !== 'null' && p.image !== '') {
-      pendingImage = p.image; showPreview(p.image);
+    document.getElementById('fAccount').value = p.account;
+    document.getElementById('fNetwork').value = p.network;
+    document.getElementById('fType').value = p.type;
+    document.getElementById('fDate').value = p.date;
+    document.getElementById('fTime').value = p.time;
+    document.getElementById('fCopy').value = p.copy;
+    document.getElementById('fStatus').value = p.status;
+    document.getElementById('fDrive').value = p.drive;
+    if (p.image.startsWith('CAROUSEL:')) {
+      carouselUrls = parseCarouselImages(p.image);
+      renderCarouselStrip();
+    } else {
+      pendingImage = p.image;
+      if (p.image) showPreview(p.image);
     }
-    onTypeChange(p.type || 'Foto');
-    updateAccountBorder();
+    onTypeChange(p.type);
     document.getElementById('modalActions').innerHTML = `
       <button class="btn-delete" onclick="deletePost()">Eliminar</button>
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
   } else {
-    document.getElementById('modalTitle').textContent = 'Nueva publicación';
-    document.getElementById('fAccount').value = currentAccount !== 'all' ? currentAccount : 'muba';
-    document.getElementById('fNetwork').value = 'instagram';
-    document.getElementById('fType').value    = 'Foto';
-    document.getElementById('fDate').value    = prefillDate || today;
-    document.getElementById('fTime').value    = '10:00';
-    document.getElementById('fCopy').value    = '';
-    document.getElementById('fStatus').value  = 'borrador';
-    document.getElementById('fDrive').value   = '';
+    document.getElementById('fDate').value = prefillDate || new Date().toISOString().split('T')[0];
     onTypeChange('Foto');
-    updateAccountBorder();
     document.getElementById('modalActions').innerHTML = `
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
@@ -1248,17 +1143,7 @@ function openModal(id = null, prefillDate = null) {
   document.getElementById('modalOverlay').classList.add('open');
 }
 
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  editingId = null; pendingImage = null;
-}
-
-function setBtnLoading(loading) {
-  const btn = document.getElementById('btnSave');
-  if (!btn) return;
-  btn.disabled = loading;
-  btn.textContent = loading ? 'Guardando…' : 'Guardar';
-}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 
 async function uploadToCloudinary(file) {
   const fd = new FormData();
@@ -1266,51 +1151,29 @@ async function uploadToCloudinary(file) {
   fd.append('upload_preset', CLOUDINARY_PRESET);
   const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
   const data = await res.json();
-  if (data.secure_url) return data.secure_url;
-  const errMsg = data.error?.message || JSON.stringify(data);
-  throw new Error('Cloudinary: ' + errMsg);
+  return data.secure_url;
 }
 
 async function savePost() {
-  if (!isAuthenticated) return;
   setBtnLoading(true);
   try {
     const type = document.getElementById('fType').value;
-    let imageUrl = pendingImage || '';
+    let finalImage = pendingImage || '';
 
     if (type === 'Carrusel') {
-      // Upload any new files, combine with existing URLs
-      if (carouselFiles.length > 0) {
-        const btn = document.getElementById('btnSave');
-        if (btn) btn.textContent = `Subiendo fotos (0/${carouselFiles.length})…`;
-        const newUrls = [];
-        for (let i = 0; i < carouselFiles.length; i++) {
-          try {
-            if (btn) btn.textContent = `Subiendo fotos (${i+1}/${carouselFiles.length})…`;
-            const url = await uploadToCloudinary(carouselFiles[i].file);
-            newUrls.push(url);
-          } catch(e) {
-            setBtnLoading(false);
-            alert('Error subiendo foto ' + (i+1) + ': ' + e.message);
-            return;
-          }
-        }
-        carouselUrls = [...carouselUrls, ...newUrls];
-        carouselFiles = [];
+      const uploaded = [];
+      for (const item of carouselFiles) {
+        const url = await uploadToCloudinary(item.file);
+        uploaded.push(url);
       }
-      imageUrl = carouselUrls.length > 0 ? 'CAROUSEL:' + carouselUrls.join('|') : '';
+      finalImage = 'CAROUSEL:' + [...carouselUrls, ...uploaded].join('|');
     } else {
       const fileInput = document.getElementById('fImage');
-      if (fileInput && fileInput.files && fileInput.files[0]) {
-        try {
-          imageUrl = await uploadToCloudinary(fileInput.files[0]);
-        } catch(e) {
-          setBtnLoading(false);
-          alert('Error subiendo imagen: ' + e.message);
-          return;
-        }
+      if (fileInput.files[0]) {
+        finalImage = await uploadToCloudinary(fileInput.files[0]);
       }
     }
+
     const p = {
       network:  document.getElementById('fNetwork').value,
       type:     document.getElementById('fType').value,
@@ -1318,65 +1181,54 @@ async function savePost() {
       time:     document.getElementById('fTime').value,
       copy:     document.getElementById('fCopy').value,
       status:   document.getElementById('fStatus').value,
-      image:    imageUrl,
+      image:    finalImage,
       drive:    document.getElementById('fDrive').value,
       account:  document.getElementById('fAccount').value,
     };
+
     if (editingId) {
       await updatePost(editingId, p);
-      const idx = posts.findIndex(x => x.id == editingId);
-      if (idx > -1) posts[idx] = { ...posts[idx], ...p };
     } else {
       p.id = Date.now();
       await createPost(p);
-      posts.push(p);
     }
-    closeModal(); render();
+    location.reload();
   } catch(e) {
-    alert('Error guardando: ' + e.message);
+    alert('Error: ' + e.message);
   } finally { setBtnLoading(false); }
 }
 
 async function deletePost() {
-  if (!isAuthenticated) return;
-  if (!editingId || !confirm('¿Eliminar esta publicación?')) return;
+  if (!confirm('¿Eliminar?')) return;
   await deletePostAPI(editingId);
-  posts = posts.filter(x => x.id != editingId);
-  closeModal(); render();
+  location.reload();
 }
 
 function handleImageUpload(e) {
-  const file = (e.target || e).files[0];
+  const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => { pendingImage = ev.target.result; showPreview(ev.target.result); };
+  reader.onload = ev => showPreview(ev.target.result);
   reader.readAsDataURL(file);
 }
 
 function openLightbox(url) {
   const lb = document.getElementById('lightbox');
-  const img = document.getElementById('lightboxImg');
-  if (!lb || !img) return;
-  img.src = url;
+  document.getElementById('lightboxImg').src = url;
   lb.classList.add('open');
 }
 
-function closeLightbox() {
-  const lb = document.getElementById('lightbox');
-  if (lb) lb.classList.remove('open');
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+
+function setBtnLoading(loading) {
+  const btn = document.getElementById('btnSave');
+  if (btn) {
+    btn.disabled = loading;
+    btn.textContent = loading ? '...' : 'Guardar';
+  }
 }
 
-document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-
-// ── INIT ──────────────────────────────────────────────────────────────────
-// Load posts directly on page load — no password needed to view
-window.onload = function() {
-  ['galleryView','listView','gridView'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  loadPosts();
-};
+window.onload = loadPosts;
 </script>
 </body>
 </html>
