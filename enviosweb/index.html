@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUBA — Gestión de Envíos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE6; --border: #E0DAD0;
+    --text: #1A1714; --text-2: #6B6560; --text-3: #9E9890;
+    --edit-ring: #4F8EF7; --red: #B5271E;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
+
+  /* --- HEADER & HERO --- */
+  .topbar { 
+    background: var(--text); 
+    color: #F7F5F0; 
+    padding: 15px 40px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    position: sticky; 
+    top: 0; 
+    z-index: 100; 
+  }
+  
+  /* LOGO DOMADO */
+  .topbar-logo-img { 
+    width: 180px; 
+    max-height: 60px; 
+    object-fit: contain; 
+    object-position: left center; 
+    display: block;
+  }
+
+  .btn-ui { padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #fff; cursor: pointer; font-size: 12px; }
+  .btn-save { background: #1A6B35; border: none; font-weight: bold; }
+
+  .hero { background: var(--text); color: #F7F5F0; padding: 30px 40px 40px; border-bottom: 1px solid #333; }
+  .hero h1 { font-size: 32px; font-weight: 300; margin-bottom: 8px; }
+
+  .layout { display: flex; }
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; min-height: 100vh; }
+  .country-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border: none; background: transparent; width: 100%; cursor: pointer; color: var(--text-2); border-left: 3px solid transparent; font-size: 14px; text-align: left; }
+  .country-btn.active { background: var(--bg); color: var(--text); border-left-color: var(--text); font-weight: 500; }
+
+  .content { flex: 1; padding: 40px; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 30px; }
+  .table-head { padding: 16px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .prov-tag { font-family: 'DM Mono'; font-size: 10px; padding: 3px 8px; background: #E8F1FC; color: #1A4F9E; border-radius: 4px; font-weight: bold; margin-right: 10px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px 20px; color: var(--text-3); font-size: 11px; text-transform: uppercase; background: #FAF9F6; border-bottom: 1px solid var(--border); }
+  td { padding: 16px 20px; border-bottom: 1px solid #F3F1ED; }
+
+  .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+  .badge-blue { background: #E8F1FC; color: #1A4F9E; }
+  .badge-green { background: #E8F5EC; color: #1A6B35; }
+
+  body.edit-mode .editable:hover { background: #F0F6FF; cursor: pointer; outline: 1.5px dashed var(--edit-ring); }
+  .btn-del { color: var(--red); background: #FDECEA; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+  
+  #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">Sincronizando MUBA Cloud...</div>
+
+<div class="topbar">
+  <img src="logo-muba.png" alt="MUBA Logo" class="topbar-logo-img">
+  
+  <div style="display:flex; gap:10px">
+    <button class="btn-ui" onclick="toggleEditMode()" id="btnEdit">Editar página</button>
+    <button class="btn-ui btn-save" id="btnSave" style="display:none" onclick="saveToSheets()">☁ Guardar en la Nube</button>
+    <button class="btn-ui" id="btnAddC" style="display:none" onclick="addCountry()">+ País</button>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>Envíos internacionales</h1>
+  <p style="opacity:0.6; font-size:14px">Gestión centralizada sincronizada con Google Sheets.</p>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebarNav"></nav>
+  <main class="content" id="contentArea"></main>
+</div>
+
+<script>
+// URL NUEVA ACTUALIZADA
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwH-bZfXe5K30XDNhaQ3nwVoWfAujX-gwsEYJJNDRuOcYlH0PRS_jgcgjb7JlbHDs3P/exec";
+
+let countries = [];
+let editMode = false;
+let activeTab = null;
+
+async function loadData() {
+    try {
+        const response = await fetch(SCRIPT_URL);
+        const rawRows = await response.json(); 
+        
+        const db = {};
+        rawRows.slice(1).forEach(row => { 
+            const [pais, bandera, nota, prov, icono, medio, pPrinc, pExtra, seguro, tiempo, arancel, obs] = row;
+            if(!pais) return;
+            
+            if(!db[pais]) db[pais] = { id: pais.toLowerCase().replace(/ /g,"_"), flag: bandera, name: pais, note: nota, providers: [] };
+            
+            let pObj = db[pais].providers.find(p => p.name === prov);
+            if(!pObj) {
+                pObj = { name: prov, icon: icono, rows: [] };
+                db[pais].providers.push(pObj);
+            }
+            pObj.rows.push({ medio, valor: pPrinc, extra: pExtra, seguro, tiempo, arancel, obs });
+        });
+
+        countries = Object.values(db);
+        if(countries.length > 0) activeTab = countries[0].id;
+        document.getElementById("loading-overlay").style.display = "none";
+        render();
+    } catch(e) {
+        document.getElementById("loading-overlay").innerHTML = "Error de conexión con MUBA Cloud.";
+    }
+}
+
+async function saveToSheets() {
+    if(!confirm("¿Deseas guardar los cambios en Google Sheets?")) return;
+    document.getElementById("loading-overlay").style.display = "flex";
+    document.getElementById("loading-overlay").innerText = "Sincronizando con Google Sheets...";
+
+    let flatData = [];
+    countries.forEach(c => {
+        c.providers.forEach(p => {
+            p.rows.forEach(r => {
+                flatData.push({
+                    pais: c.name, bandera: c.flag, nota: c.note,
+                    prov: p.name, icono: p.icon, medio: r.medio,
+                    pPrinc: r.valor, pExtra: r.extra, seguro: r.seguro,
+                    tiempo: r.tiempo, arancel: r.arancel, obs: r.obs
+                });
+            });
+        });
+    });
+
+    try {
+        // AJUSTE PARA GITHUB: mode 'no-cors' agregado
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(flatData)
+        });
+        alert("¡Guardado enviado! Revisa tu Google Sheets en unos segundos.");
+    } catch(e) {
+        alert("Error al intentar conectar con la nube.");
+    }
+    document.getElementById("loading-overlay").style.display = "none";
+}
+
+function render() {
+    const nav = document.getElementById("sidebarNav");
+    const area = document.getElementById("contentArea");
+    nav.innerHTML = ""; area.innerHTML = "";
+
+    document.getElementById("btnAddC").style.display = editMode ? "block" : "none";
+    document.getElementById("btnSave").style.display = editMode ? "block" : "none";
+
+    countries.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = `country-btn ${c.id === activeTab ? 'active' : ''}`;
+        btn.innerHTML = `<span>${c.flag} ${c.name}</span>`;
+        btn.onclick = () => { activeTab = c.id; render(); };
+        nav.appendChild(btn);
+
+        if(c.id === activeTab) {
+            let tables = c.providers.map((p, pi) => `
+                <div class="table-wrap">
+                    <div class="table-head">
+                        <div><span class="prov-tag">${p.icon}</span><strong>${p.name}</strong></div>
+                        ${editMode ? `<div><button class="btn-del" onclick="deleteProv(${pi})">X</button> <button onclick="addRow(${pi})">+ Línea</button></div>` : ''}
+                    </div>
+                    <table>
+                        <thead><tr><th>Medio</th><th>Principal</th><th>Extra</th><th>Seguro</th><th>Tiempo</th><th>Arancel</th><th>Observaciones</th></tr></thead>
+                        <tbody>
+                            ${p.rows.map((r, ri) => `
+                                <tr>
+                                    <td class="editable" onclick="editField(${pi},${ri},'medio')"><span class="badge badge-blue">${r.medio}</span></td>
+                                    <td class="editable" onclick="editPrice(${pi},${ri},'valor')">${r.valor}</td>
+                                    <td class="editable" onclick="editPrice(${pi},${ri},'extra')">${r.extra}</td>
+                                    <td class="editable" onclick="editField(${pi},${ri},'seguro')">${r.seguro}</td>
+                                    <td class="editable" onclick="editField(${pi},${ri},'tiempo')">${r.tiempo}</td>
+                                    <td class="editable" onclick="editField(${pi},${ri},'arancel')"><span class="badge badge-green">${r.arancel}</span></td>
+                                    <td class="editable" style="color:var(--text-3); font-size:12px" onclick="editField(${pi},${ri},'obs')">${r.obs}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `).join('');
+
+            area.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                    <h2>${c.flag} ${c.name}</h2>
+                    ${editMode ? `<button class="btn-del" onclick="deleteCountry()">Eliminar País</button>` : ''}
+                </div>
+                <p class="editable" onclick="editNote()" style="margin-bottom:30px; color:var(--text-3); font-size:14px">${c.note}</p>
+                ${tables}
+                ${editMode ? `<button style="background:var(--text); color:#fff; padding:10px 20px; border:none; border-radius:8px; cursor:pointer" onclick="addProv()">+ Agregar Proveedor</button>` : ''}
+            `;
+        }
+    });
+}
+
+function toggleEditMode() {
+    if(!editMode && prompt("Clave:") !== "andresfelipemuba") return;
+    editMode = !editMode;
+    document.body.classList.toggle("edit-mode", editMode);
+    document.getElementById("btnEdit").innerText = editMode ? "Cerrar edición" : "Editar página";
+    render();
+}
+
+function editField(pi, ri, field) {
+    if(!editMode) return;
+    const c = countries.find(x => x.id === activeTab);
+    const val = prompt("Nuevo valor:", c.providers[pi].rows[ri][field]);
+    if(val !== null) { c.providers[pi].rows[ri][field] = val; render(); }
+}
+
+function editPrice(pi, ri, field) {
+    if(!editMode) return;
+    const c = countries.find(x => x.id === activeTab);
+    const val = prompt("Precio (número):");
+    if(val && !isNaN(val)) {
+        c.providers[pi].rows[ri][field] = `$${parseFloat(val).toFixed(2)} USD / lb`;
+        render();
+    }
+}
+
+function editNote() {
+    if(!editMode) return;
+    const c = countries.find(x => x.id === activeTab);
+    const val = prompt("Nota:", c.note);
+    if(val) { c.note = val; render(); }
+}
+
+function addCountry() {
+    if(!editMode) return;
+    const n = prompt("País:"); const f = prompt("Bandera:");
+    if(n && f) {
+        countries.push({ id: n.toLowerCase().replace(/ /g,"_"), flag: f, name: n, note: "Nota...", providers: [] });
+        activeTab = n.toLowerCase().replace(/ /g,"_"); render();
+    }
+}
+
+function addProv() {
+    if(!editMode) return;
+    const n = prompt("Proveedor:");
+    if(n) {
+        countries.find(x => x.id === activeTab).providers.push({ name: n, icon: n.substring(0,2).toUpperCase(), rows: [] });
+        render();
+    }
+}
+
+function addRow(pi) {
+    if(!editMode) return;
+    countries.find(x => x.id === activeTab).providers[pi].rows.push({ medio: "Aéreo", valor: "$0.00 USD / lb", extra: "$0.00 USD / lb", seguro: "Opcional", tiempo: "Días", arancel: "No cobra", obs: "-" });
+    render();
+}
+
+function deleteProv(pi) { if(editMode && confirm("¿Borrar?")) { countries.find(x => x.id === activeTab).providers.splice(pi, 1); render(); } }
+function deleteCountry() { if(editMode && confirm("¿Borrar país?")) { countries = countries.filter(x => x.id !== activeTab); activeTab = countries[0]?.id; render(); } }
+
+loadData();
+</script>
+</body>
+</html>
