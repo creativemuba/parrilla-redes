@@ -128,9 +128,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .upload-placeholder .upload-icon{font-size:2rem;}
 .upload-placeholder p{font-size:0.82rem;line-height:1.4;}
 .upload-placeholder span{font-size:0.72rem;color:var(--text-dim);}
-.preview-wrap{position:relative;display:none;}
-.preview-wrap img{width:100%;max-height:240px;object-fit:cover;border-radius:10px;display:block;}
-.preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+.preview-wrap{position:relative;display:none;background:#000;border-radius:10px;overflow:hidden;}
+.preview-wrap img, .preview-wrap video{width:100%;max-height:240px;object-fit:contain;display:block;}
+.preview-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:background 0.15s;z-index:5;}
 .preview-remove:hover{background:rgba(220,50,50,0.9);}
 .carousel-thumb{position:relative;flex-shrink:0;width:110px;height:138px;border-radius:8px;overflow:hidden;scroll-snap-align:start;border:1px solid var(--border);}
 .carousel-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -247,10 +247,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="controls">
   <div class="filters">
-    <button class="filter-btn active" data-filter="all"        onclick="setFilter('all',this)">Todas</button>
-    <button class="filter-btn"        data-filter="instagram" onclick="setFilter('instagram',this)">📸 Instagram</button>
-    <button class="filter-btn"        data-filter="facebook"  onclick="setFilter('facebook',this)">👥 Facebook</button>
-    <button class="filter-btn"        data-filter="tiktok"    onclick="setFilter('tiktok',this)">🎵 TikTok</button>
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">Todas</button>
+    <button class="filter-btn" data-filter="instagram" onclick="setFilter('instagram',this)">📸 Instagram</button>
+    <button class="filter-btn" data-filter="facebook" onclick="setFilter('facebook',this)">👥 Facebook</button>
+    <button class="filter-btn" data-filter="tiktok" onclick="setFilter('tiktok',this)">🎵 TikTok</button>
   </div>
   <div class="view-toggle">
     <button class="active" onclick="setView('calendar',this)">📅 Calendario</button>
@@ -349,25 +349,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="form-group full">
         <label>Estado</label>
-
         <select id="fStatus">
           <option value="borrador">⚫ Borrador</option>
           <option value="aprobado">🟡 Aprobado</option>
           <option value="publicado">🟢 Publicado</option>
         </select>
       </div>
-      <div class="form-group full">
-        <label>Screenshot / Imagen del post</label>
+      
+      <div class="form-group full" id="mainUploadGroup">
+        <label id="mainUploadLabel">Screenshot / Imagen del post</label>
         <div class="upload-zone" id="uploadZone">
-          <input type="file" id="fImage" accept="image/*" onchange="handleImageUpload(event)">
+          <input type="file" id="fImage" accept="image/*,video/*" onchange="handleImageUpload(event)">
           <div class="upload-placeholder" id="uploadPlaceholder">
             <span class="upload-icon">🖼</span>
-            <p>Arrastra una imagen o haz clic para subir</p>
-            <span>PNG, JPG, WEBP — captura del diseño o post publicado</span>
+            <p>Arrastra un archivo o haz clic para subir</p>
+            <span>PNG, JPG, MP4, MOV</span>
           </div>
           <div class="preview-wrap" id="previewWrap">
-            <img id="previewImg" src="" alt="Vista previa">
+            <img id="previewImg" src="" alt="Vista previa" style="display:none;">
+            <video id="previewVideo" src="" autoplay muted loop playsinline style="display:none;"></video>
             <button class="preview-remove" onclick="removeImage(event)">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full" id="coverSection" style="display:none;">
+        <label>Portada del Video (Opcional)</label>
+        <div class="upload-zone" style="min-height: 60px; padding: 10px;">
+          <input type="file" id="fCover" accept="image/*" onchange="handleCoverUpload(event)">
+          <div id="coverPlaceholder" style="text-align:center; color:var(--text-muted); font-size:0.8rem; pointer-events:none;">
+             🖼 Haz clic o arrastra para subir una imagen de portada
+          </div>
+          <div class="preview-wrap" id="coverPreviewWrap" style="display:none; border-radius:8px; overflow:hidden;">
+            <img id="coverPreviewImg" src="" style="width:100px; height:100px; object-fit:cover; margin:0 auto; display:block;">
+            <button class="preview-remove" onclick="removeCover(event)">✕</button>
           </div>
         </div>
       </div>
@@ -409,9 +424,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <button onclick="closePreview()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1;flex-shrink:0;">✕</button>
     </div>
     <div style="overflow-y:auto;flex:1;">
-      <div id="previewImgWrap" style="display:none;max-height:280px;overflow:hidden;background:#000;">
-        <img id="previewModalImg" src="" style="width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;" onclick="openLightbox(this.src)">
-      </div>
+      <div id="previewImgWrap" style="display:none;max-height:400px;overflow:hidden;background:#000;">
+        </div>
       <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
         <div style="display:flex;gap:20px;">
           <div style="text-align:center;">
@@ -450,51 +464,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script>
-// ── TU API EXACTA ───────────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbySyOpsxtdgE9SBCrIRJwnDgLH-zH4dhgVzzEYH7kgm1hz8EHx_Ej5dn6ij7ATH9pU4/exec'; 
 
+// ── SESIÓN PERSISTENTE ────────────────────────────────────────────
 const PASSWORD = 'MubaRedes123789';
-let isAuthenticated = false;
+let isAuthenticated = localStorage.getItem('muba_logged_in') === 'true';
 
-function openPwModal() {
-  document.getElementById('pwOverlay').style.display = 'flex';
-  setTimeout(() => document.getElementById('pwInput').focus(), 50);
-}
+window.onload = () => { updateEditUI(); loadPosts(); };
+
+function openPwModal() { document.getElementById('pwOverlay').style.display = 'flex'; setTimeout(() => document.getElementById('pwInput').focus(), 50); }
 
 function toggleEditMode() {
-  if (isAuthenticated) { isAuthenticated = false; updateEditUI(); } 
+  if (isAuthenticated) { isAuthenticated = false; localStorage.removeItem('muba_logged_in'); updateEditUI(); } 
   else { openPwModal(); }
 }
-function closePwModal() {
-  document.getElementById('pwOverlay').style.display = 'none';
-  document.getElementById('pwInput').value = '';
-  document.getElementById('pwError').style.display = 'none';
-}
+function closePwModal() { document.getElementById('pwOverlay').style.display = 'none'; document.getElementById('pwInput').value = ''; document.getElementById('pwError').style.display = 'none'; }
 function checkPassword() {
   const input = document.getElementById('pwInput').value;
-  if (input === PASSWORD) {
-    isAuthenticated = true; closePwModal(); updateEditUI();
-  } else {
-    const err = document.getElementById('pwError');
-    err.style.display = 'block'; document.getElementById('pwInput').value = '';
-    document.getElementById('pwInput').focus();
-    setTimeout(() => err.style.display = 'none', 2500);
+  if (input === PASSWORD) { isAuthenticated = true; localStorage.setItem('muba_logged_in', 'true'); closePwModal(); updateEditUI(); } 
+  else {
+    const err = document.getElementById('pwError'); err.style.display = 'block'; document.getElementById('pwInput').value = ''; document.getElementById('pwInput').focus(); setTimeout(() => err.style.display = 'none', 2500);
   }
 }
 function updateEditUI() {
-  const editBtn = document.getElementById('editModeBtn');
-  const addBtn = document.querySelector('.add-btn');
+  const editBtn = document.getElementById('editModeBtn'); const addBtn = document.querySelector('.add-btn');
   if (isAuthenticated) {
-    editBtn.textContent = '✏️ Editando'; editBtn.style.borderColor = '#3ddc84'; editBtn.style.color = '#3ddc84';
-    if (addBtn) addBtn.style.display = 'flex';
+    editBtn.textContent = '✏️ Editando'; editBtn.style.borderColor = '#3ddc84'; editBtn.style.color = '#3ddc84'; if (addBtn) addBtn.style.display = 'flex';
   } else {
-    editBtn.textContent = '🔐 Editar'; editBtn.style.borderColor = ''; editBtn.style.color = '';
-    if (addBtn) addBtn.style.display = 'none';
+    editBtn.textContent = '🔐 Editar'; editBtn.style.borderColor = ''; editBtn.style.color = ''; if (addBtn) addBtn.style.display = 'none';
   }
 }
 
-// CLOUDINARY CONFIG
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtziyjbrg/image/upload";
+// ── CLOUDINARY ────────────────────────────────────────
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtziyjbrg/auto/upload";
 const CLOUDINARY_PRESET = "parrilla_uploads";
 
 const accountColors = { muba: '#FF4D4F', muba_the_agency: '#1D4ED8', andres_felipe: '#10B981' };
@@ -505,17 +507,18 @@ let currentFilter = 'all';
 let currentView = 'calendar';
 let currentAccount = 'all';
 let editingId = null;
-let pendingImage = null;
+
+let pendingImage = null; // Video o Imagen principal
+let pendingCover = null; // Portada del video
 let carouselFiles = [];
 let carouselUrls  = [];
 
 function setSyncStatus(state, msg) {
-  const bar = document.getElementById('syncBar');
-  const txt = document.getElementById('syncMsg');
+  const bar = document.getElementById('syncBar'); const txt = document.getElementById('syncMsg');
   bar.className = 'sync-bar ' + state; txt.textContent = msg;
 }
 
-// ── LEER DATOS Y LIMPIAR LA FECHA ───────────────────────────────────────────
+// ── LEER DATOS ───────────────────────────────────────────
 async function loadPosts() {
   try {
     setSyncStatus('syncing', 'Cargando datos...');
@@ -526,40 +529,27 @@ async function loadPosts() {
     if (data.length > 0 && data[0].id === 'error') throw new Error(data[0].copy); 
     
     posts = data.map(row => {
-      // 🛠️ LA ASPIRADORA DE FECHAS (Extrae SÓLO el YYYY-MM-DD sin importar el desastre de Google)
       let cleanDate = '';
       if (row.date) {
           let dStr = row.date.toString();
-          let match = dStr.match(/(\d{4})-(\d{2})-(\d{2})/); // Busca 2026-05-07
-          if (match) {
-              cleanDate = match[0];
-          } else {
-              // Si viene en otro formato, intenta convertirlo
+          let match = dStr.match(/(\d{4})-(\d{2})-(\d{2})/); 
+          if (match) { cleanDate = match[0]; } 
+          else {
               let tmp = new Date(dStr);
-              if (!isNaN(tmp)) {
-                  cleanDate = tmp.getFullYear() + '-' + String(tmp.getMonth()+1).padStart(2,'0') + '-' + String(tmp.getDate()).padStart(2,'0');
-              } else {
-                  cleanDate = dStr; // Último recurso
-              }
+              if (!isNaN(tmp)) { cleanDate = tmp.getFullYear() + '-' + String(tmp.getMonth()+1).padStart(2,'0') + '-' + String(tmp.getDate()).padStart(2,'0'); } 
+              else { cleanDate = dStr; }
           }
       }
-
       return {
-        id: row.id, network: row.network, type: row.type, date: cleanDate,
-        time: row.time, copy: row.copy, status: row.status, image: row.image || '',
-        drive: row.drive || '', account: row.account || 'muba',
+        id: row.id, network: row.network, type: row.type, date: cleanDate, time: row.time, copy: row.copy, status: row.status, image: row.image || '', drive: row.drive || '', account: row.account || 'muba',
       };
     }).filter(p => p.id);
     
-    setSyncStatus('synced', `✓ Conectado · ${posts.length} publicaciones`);
-    render();
-  } catch(e) {
-    setSyncStatus('error', '✗ Error al cargar');
-    posts = []; render();
-  }
+    setSyncStatus('synced', `✓ Conectado · ${posts.length} publicaciones`); render();
+  } catch(e) { setSyncStatus('error', '✗ Error al cargar'); posts = []; render(); }
 }
 
-// ── ENVIAR AL GOOGLE SHEETS ───────────────────────────────────────────
+// ── ENVIAR A GOOGLE ───────────────────────────────────────────
 function sendToGoogle(action, data) {
     return new Promise((resolve, reject) => {
         try {
@@ -569,27 +559,20 @@ function sendToGoogle(action, data) {
             const inputAction = document.createElement('input'); inputAction.type = 'hidden'; inputAction.name = 'action'; inputAction.value = action;
             const inputData = document.createElement('input'); inputData.type = 'hidden'; inputData.name = 'data'; inputData.value = JSON.stringify(data);
 
-            form.appendChild(inputAction); form.appendChild(inputData); document.body.appendChild(form);
-            form.submit();
-
+            form.appendChild(inputAction); form.appendChild(inputData); document.body.appendChild(form); form.submit();
             setTimeout(() => { document.body.removeChild(form); resolve(); }, 1500); 
         } catch (err) { reject(new Error("Falló envío: " + err.message)); }
     });
 }
 
-// ── FILTRO A PRUEBA DE FALLOS ───────────────────────────────────────────────
 function getMonthPosts() {
   const y = currentDate.getFullYear(), m = currentDate.getMonth();
   return posts.filter(p => {
     if (!p.date) return false;
-    // Compara la fecha separando el texto. NUNCA más fallará por zonas horarias.
     const parts = p.date.split('-'); 
     if (parts.length >= 3) {
-        const postY = parseInt(parts[0], 10);
-        const postM = parseInt(parts[1], 10) - 1; // Enero es 0 en JS
-        return postY === y && postM === m 
-          && (currentAccount==='all' || p.account===currentAccount)
-          && (currentFilter === 'all' || p.network === currentFilter);
+        const postY = parseInt(parts[0], 10); const postM = parseInt(parts[1], 10) - 1; 
+        return postY === y && postM === m && (currentAccount==='all' || p.account===currentAccount) && (currentFilter === 'all' || p.network === currentFilter);
     }
     return false;
   });
@@ -615,9 +598,7 @@ function renderCalendar() {
   document.getElementById('monthLabel').textContent = `${months[m]} ${y}`;
   const firstDay = new Date(y, m, 1);
   let startDow = firstDay.getDay(); startDow = startDow === 0 ? 6 : startDow - 1;
-  const daysInMonth = new Date(y, m+1, 0).getDate();
-  const prevDays = new Date(y, m, 0).getDate();
-  const today = new Date();
+  const daysInMonth = new Date(y, m+1, 0).getDate(); const prevDays = new Date(y, m, 0).getDate(); const today = new Date();
   const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
   
   const mp = getMonthPosts();
@@ -626,8 +607,7 @@ function renderCalendar() {
     const parts = p.date.split('-');
     if(parts.length >= 3) {
        const dNum = parseInt(parts[2], 10);
-       if (!postsByDay[dNum]) postsByDay[dNum] = [];
-       postsByDay[dNum].push(p);
+       if (!postsByDay[dNum]) postsByDay[dNum] = []; postsByDay[dNum].push(p);
     }
   });
 
@@ -648,8 +628,7 @@ function renderCalendar() {
       const withImg = dayPosts.find(p => p.image && p.image !== 'null' && p.image !== '');
       if (withImg) {
         const th = document.createElement('img'); th.className = 'cal-thumb'; th.src = getFirstImage(withImg.image);
-        th.onclick = e => { e.stopPropagation(); openLightbox(getFirstImage(withImg.image)); };
-        cell.appendChild(th);
+        th.onclick = e => { e.stopPropagation(); openLightbox(getFirstImage(withImg.image)); }; cell.appendChild(th);
       }
       dayPosts.slice(0, 2).forEach(p => {
         const pill = document.createElement('div'); pill.className = `post-pill ${p.network}`;
@@ -657,13 +636,11 @@ function renderCalendar() {
         const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
         pill.style.borderLeft = `4px solid ${color}`;
         pill.innerHTML = `<span style="background:${color};color:#fff;padding:1px 5px;border-radius:4px;font-size:0.6rem;font-weight:700;flex-shrink:0;white-space:nowrap;">${acLabel}</span> ${icons[p.network]||''} ${p.time||''} ${p.type||''}`;
-        pill.onclick = e => { e.stopPropagation(); openPreview(p.id); };
-        cell.appendChild(pill);
+        pill.onclick = e => { e.stopPropagation(); openPreview(p.id); }; cell.appendChild(pill);
       });
       if (dayPosts.length > 2) {
         const more = document.createElement('div'); more.className = 'more-posts';
-        more.textContent = `+${dayPosts.length - 2} más`; more.onclick = e => e.stopPropagation();
-        cell.appendChild(more);
+        more.textContent = `+${dayPosts.length - 2} más`; more.onclick = e => e.stopPropagation(); cell.appendChild(more);
       }
     }
     if (isCurrentMonth) {
@@ -680,8 +657,7 @@ function renderGallery() {
   if (mp.length === 0) { grid.innerHTML = `<div class="empty-table" style="grid-column:1/-1"><div>📭</div>Sin publicaciones este mes</div>`; return; }
   const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
   grid.innerHTML = mp.map(p => {
-    const parts = (p.date||'').split('-');
-    let ds = p.date;
+    const parts = (p.date||'').split('-'); let ds = p.date;
     if(parts.length >= 3) {
         const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
         ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
@@ -707,8 +683,7 @@ function renderList() {
   if (mp.length === 0) { body.innerHTML = `<tr><td colspan="7"><div class="empty-table"><div>📭</div>Sin publicaciones este mes</div></td></tr>`; return; }
   const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
   body.innerHTML = mp.map(p => {
-    const parts = (p.date||'').split('-');
-    let ds = p.date;
+    const parts = (p.date||'').split('-'); let ds = p.date;
     if(parts.length >= 3) {
         const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
         ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
@@ -807,12 +782,28 @@ function exportCSV() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'parrilla.csv'; a.click();
 }
 
+// ── MANEJO DE TIPOS DE CONTENIDO Y PORTADAS ─────────────────────────
 function onTypeChange(type) {
-  const uploadZone = document.getElementById('uploadZone'); const carouselSection = document.getElementById('carouselSection');
-  if (!uploadZone || !carouselSection) return;
-  const singleGroup = uploadZone.closest('.form-group') || uploadZone.parentElement;
-  if (type === 'Carrusel') { singleGroup.style.display = 'none'; carouselSection.style.display = 'block'; } 
-  else { singleGroup.style.display = 'block'; carouselSection.style.display = 'none'; }
+  const mainZone = document.getElementById('mainUploadGroup');
+  const carouselZone = document.getElementById('carouselSection');
+  const coverZone = document.getElementById('coverSection');
+  const mainLabel = document.getElementById('mainUploadLabel');
+
+  if (type === 'Carrusel') {
+      mainZone.style.display = 'none';
+      coverZone.style.display = 'none';
+      carouselZone.style.display = 'block';
+  } else if (type === 'Video' || type === 'Reel') {
+      mainZone.style.display = 'block';
+      carouselZone.style.display = 'none';
+      coverZone.style.display = 'block';
+      mainLabel.textContent = 'Archivo del Video (.mp4, .mov)';
+  } else {
+      mainZone.style.display = 'block';
+      carouselZone.style.display = 'none';
+      coverZone.style.display = 'none';
+      mainLabel.textContent = 'Screenshot / Imagen del post';
+  }
 }
 
 function parseCarouselImages(raw) {
@@ -821,12 +812,31 @@ function parseCarouselImages(raw) {
   return null;
 }
 
+// Extrae la imagen principal para el calendario/grid
 function getFirstImage(imageField) {
   if (!imageField || imageField === 'null' || imageField === '') return null;
-  if (imageField.startsWith('CAROUSEL:')) { const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); return urls.length > 0 ? urls[0] : null; }
+  
+  if (imageField.startsWith('CAROUSEL:')) { 
+      const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); 
+      return urls.length > 0 ? urls[0] : null; 
+  }
+  
+  if (imageField.startsWith('VIDEO:')) {
+      const parts = imageField.replace('VIDEO:', '').split('|');
+      if (parts[1]) return parts[1]; // Retorna la Portada si existe
+      if (parts[0] && parts[0].match(/\.(mp4|mov|webm)$/i)) return parts[0].replace(/\.[^/.]+$/, ".jpg");
+      return parts[0];
+  }
+
+  // Compatibilidad con videos viejos
+  if (imageField.match(/\.(mp4|mov|webm)$/i)) {
+      return imageField.replace(/\.[^/.]+$/, ".jpg");
+  }
+
   return imageField;
 }
 
+// ── MANEJO DE ARCHIVOS (CAROUSEL) ──
 function handleCarouselUpload(event) { addCarouselFiles(Array.from(event.target.files)); event.target.value = ''; }
 function handleCarouselDrop(event) { event.preventDefault(); document.getElementById('carouselDropZone').style.borderColor = ''; const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/')); addCarouselFiles(files); }
 
@@ -865,11 +875,57 @@ function renderCarouselStrip() {
 }
 
 function clearCarousel() { carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl)); carouselFiles = []; carouselUrls = []; renderCarouselStrip(); }
-function showPreview(url) { const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const placeholder = document.getElementById('uploadPlaceholder'); if (!wrap || !img) return; img.src = url; wrap.style.display = 'block'; if (placeholder) placeholder.style.display = 'none'; }
+
+// ── MANEJO DE ARCHIVOS (MAIN Y PORTADA) ──
+function handleImageUpload(e) { 
+    const file = e.target.files[0]; 
+    if (!file) return; 
+    const isVid = file.type.startsWith('video/');
+    const tempUrl = URL.createObjectURL(file);
+    showPreview(tempUrl, isVid);
+}
+
+function handleCoverUpload(e) { 
+    const file = e.target.files[0]; 
+    if (!file) return; 
+    const tempUrl = URL.createObjectURL(file);
+    showCoverPreview(tempUrl);
+}
+
+function showPreview(url, isVideo = null) { 
+    const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const vid = document.getElementById('previewVideo'); const placeholder = document.getElementById('uploadPlaceholder'); 
+    if (!wrap) return; 
+    if (isVideo === null) { isVideo = url.match(/\.(mp4|mov|webm)$/i); }
+    if (isVideo) { img.style.display = 'none'; vid.src = url; vid.style.display = 'block'; } 
+    else { vid.style.display = 'none'; vid.src = ''; img.src = url; img.style.display = 'block'; }
+    wrap.style.display = 'block'; if (placeholder) placeholder.style.display = 'none'; 
+}
+
+function showCoverPreview(url) {
+    const wrap = document.getElementById('coverPreviewWrap'); const img = document.getElementById('coverPreviewImg'); const placeholder = document.getElementById('coverPlaceholder');
+    img.src = url; wrap.style.display = 'block'; if(placeholder) placeholder.style.display = 'none';
+}
+
 function removeImage(e) { e.stopPropagation(); clearPreview(); }
-function clearPreview() { pendingImage = null; const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const placeholder = document.getElementById('uploadPlaceholder'); if (wrap) wrap.style.display = 'none'; if (img) img.src = ''; if (placeholder) placeholder.style.display = 'flex'; }
+function removeCover(e) { e.stopPropagation(); clearCoverPreview(); }
+
+function clearPreview() { 
+    pendingImage = null; 
+    const fileInput = document.getElementById('fImage'); if (fileInput) fileInput.value = '';
+    const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const vid = document.getElementById('previewVideo'); const placeholder = document.getElementById('uploadPlaceholder'); 
+    if (wrap) wrap.style.display = 'none'; if (img) img.src = ''; if (vid) vid.src = ''; if (placeholder) placeholder.style.display = 'flex'; 
+}
+
+function clearCoverPreview() {
+    pendingCover = null;
+    const fileInput = document.getElementById('fCover'); if (fileInput) fileInput.value = '';
+    const wrap = document.getElementById('coverPreviewWrap'); const img = document.getElementById('coverPreviewImg'); const placeholder = document.getElementById('coverPlaceholder');
+    if(wrap) wrap.style.display = 'none'; if(img) img.src = ''; if(placeholder) placeholder.style.display = 'block';
+}
+
 function updateAccountBorder() { const acc = document.getElementById('fAccount') ? document.getElementById('fAccount').value : 'muba'; }
 
+// ── PREVIEW MODAL LECTOR ──
 function openPreview(id) {
   const p = posts.find(x => x.id == id); if (!p) return;
   const color = accountColors[p.account] || '#888';
@@ -880,12 +936,41 @@ function openPreview(id) {
   document.getElementById('previewTypeBadge').textContent = p.type; document.getElementById('previewDate').textContent = p.date;
   document.getElementById('previewTime').textContent = p.time; document.getElementById('previewStatus').textContent = statusLabels[p.status];
   document.getElementById('previewStatus').style.cssText = statusStyles[p.status];
+  
   const imgWrap = document.getElementById('previewImgWrap'); imgWrap.innerHTML = '';
+  
   if (p.image && p.image !== 'null') {
-    const urls = parseCarouselImages(p.image) || [p.image];
-    urls.forEach(url => { const img = document.createElement('img'); img.src = url; img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; img.onclick = () => openLightbox(url); imgWrap.appendChild(img); });
+    if (p.image.startsWith('CAROUSEL:')) {
+        const urls = parseCarouselImages(p.image);
+        urls.forEach(url => { 
+            const img = document.createElement('img'); img.src = url; 
+            img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; 
+            img.onclick = () => openLightbox(url); imgWrap.appendChild(img); 
+        });
+    } 
+    else if (p.image.startsWith('VIDEO:')) {
+        const parts = p.image.replace('VIDEO:', '').split('|');
+        const vid = document.createElement('video');
+        vid.src = parts[0]; 
+        if (parts[1]) vid.poster = parts[1]; // Pone la portada en el reproductor
+        vid.controls = true;
+        vid.style.cssText = 'width:100%;max-height:400px;background:#000;border-radius:10px;display:block;';
+        imgWrap.appendChild(vid);
+    }
+    else if (p.image.match(/\.(mp4|mov|webm)$/i)) {
+        const vid = document.createElement('video'); vid.src = p.image; vid.controls = true;
+        vid.style.cssText = 'width:100%;max-height:400px;background:#000;border-radius:10px;display:block;'; imgWrap.appendChild(vid);
+    }
+    else {
+        const img = document.createElement('img'); img.src = p.image; 
+        img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; 
+        img.onclick = () => openLightbox(p.image); imgWrap.appendChild(img);
+    }
     imgWrap.style.display = 'block';
-  } else { imgWrap.style.display = 'none'; }
+  } else { 
+      imgWrap.style.display = 'none'; 
+  }
+
   document.getElementById('previewCopy').textContent = p.copy; document.getElementById('previewCopyWrap').style.display = p.copy ? 'block' : 'none';
   const driveLink = document.getElementById('previewDriveLink'); driveLink.href = p.drive; document.getElementById('previewDriveWrap').style.display = p.drive ? 'block' : 'none';
   const editBtn = document.getElementById('previewEditBtn'); editBtn.style.display = isAuthenticated ? 'block' : 'none';
@@ -897,15 +982,29 @@ function closePreview() { document.getElementById('previewOverlay').classList.re
 
 function openModal(id = null, prefillDate = null) {
   if (!isAuthenticated) return;
-  editingId = id; clearCarousel(); clearPreview();
+  editingId = id; clearCarousel(); clearPreview(); clearCoverPreview();
   if (id) {
     const p = posts.find(x => x.id == id);
     document.getElementById('fAccount').value = p.account; document.getElementById('fNetwork').value = p.network;
     document.getElementById('fType').value = p.type; document.getElementById('fDate').value = p.date;
     document.getElementById('fTime').value = p.time; document.getElementById('fCopy').value = p.copy;
     document.getElementById('fStatus').value = p.status; document.getElementById('fDrive').value = p.drive;
-    if (p.image.startsWith('CAROUSEL:')) { carouselUrls = parseCarouselImages(p.image); renderCarouselStrip(); } 
-    else { pendingImage = p.image; if (p.image) showPreview(p.image); }
+    
+    if (p.image.startsWith('CAROUSEL:')) { 
+        carouselUrls = parseCarouselImages(p.image); renderCarouselStrip(); 
+    } 
+    else if (p.image.startsWith('VIDEO:')) {
+        const parts = p.image.replace('VIDEO:', '').split('|');
+        pendingImage = parts[0] || '';
+        pendingCover = parts[1] || '';
+        if (pendingImage) showPreview(pendingImage, true);
+        if (pendingCover) showCoverPreview(pendingCover);
+    }
+    else { 
+        pendingImage = p.image; 
+        if (p.image) showPreview(p.image); 
+    }
+    
     onTypeChange(p.type);
     document.getElementById('modalActions').innerHTML = `<button class="btn-delete" onclick="deletePost()">Eliminar</button><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
   } else {
@@ -922,7 +1021,7 @@ async function uploadToCloudinary(file) {
   try {
     const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_PRESET);
     const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
-    if (!res.ok) throw new Error("Preset inválido o bloqueado.");
+    if (!res.ok) throw new Error("Preset inválido o archivo rechazado.");
     const data = await res.json(); return data.secure_url;
   } catch(e) { throw new Error("Cloudinary falló: " + e.message); }
 }
@@ -930,24 +1029,47 @@ async function uploadToCloudinary(file) {
 async function savePost() {
   setBtnLoading(true);
   try {
-    const type = document.getElementById('fType').value; let finalImage = pendingImage || '';
+    const type = document.getElementById('fType').value; 
+    let finalImage = '';
+
     if (type === 'Carrusel') {
       const uploaded = [];
       for (const item of carouselFiles) { const url = await uploadToCloudinary(item.file); uploaded.push(url); }
       finalImage = 'CAROUSEL:' + [...carouselUrls, ...uploaded].join('|');
     } else {
+      let finalMain = pendingImage || '';
+      let finalCover = pendingCover || '';
+
       const fileInput = document.getElementById('fImage');
-      if (fileInput.files && fileInput.files[0]) { finalImage = await uploadToCloudinary(fileInput.files[0]); }
+      if (fileInput.files && fileInput.files[0]) { 
+          finalMain = await uploadToCloudinary(fileInput.files[0]); 
+      }
+      
+      const coverInput = document.getElementById('fCover');
+      if (coverInput && coverInput.files && coverInput.files[0]) { 
+          finalCover = await uploadToCloudinary(coverInput.files[0]); 
+      }
+
+      if (type === 'Video' || type === 'Reel') {
+          // Guardamos ambas cosas en la misma celda de Google Sheet separadas por un pipe |
+          finalImage = 'VIDEO:' + finalMain + '|' + finalCover;
+      } else {
+          finalImage = finalMain;
+      }
     }
+
     const p = {
       network: document.getElementById('fNetwork').value, type: document.getElementById('fType').value,
       date: document.getElementById('fDate').value, time: document.getElementById('fTime').value,
       copy: document.getElementById('fCopy').value, status: document.getElementById('fStatus').value,
       image: finalImage, drive: document.getElementById('fDrive').value, account: document.getElementById('fAccount').value,
     };
+
     if (editingId) { p.id = editingId; await sendToGoogle('update', p); } 
     else { p.id = Date.now().toString(); await sendToGoogle('create', p); }
+    
     setTimeout(() => location.reload(), 1500);
+    
   } catch(e) { alert('🚨 ERROR AL GUARDAR:\n\n' + e.message); setBtnLoading(false); } 
 }
 
@@ -957,12 +1079,10 @@ async function deletePost() {
   catch(e) { alert("Error al eliminar: " + e.message); }
 }
 
-function handleImageUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => showPreview(ev.target.result); reader.readAsDataURL(file); }
 function openLightbox(url) { const lb = document.getElementById('lightbox'); document.getElementById('lightboxImg').src = url; lb.classList.add('open'); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 function setBtnLoading(loading) { const btn = document.getElementById('btnSave'); if (btn) { btn.disabled = loading; btn.textContent = loading ? 'Guardando...' : 'Guardar'; } }
 
-window.onload = loadPosts;
 </script>
 </body>
 </html>
