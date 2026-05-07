@@ -450,26 +450,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script>
-// ── LA NUEVA URL OFICIAL ───────────────────────────────────────────
+// ── TU API EXACTA ───────────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbySyOpsxtdgE9SBCrIRJwnDgLH-zH4dhgVzzEYH7kgm1hz8EHx_Ej5dn6ij7ATH9pU4/exec'; 
 
-// ── CONTRASEÑA ────────────────────────────────────────────────────────────
 const PASSWORD = 'MubaRedes123789';
 let isAuthenticated = false;
 
 function openPwModal() {
-  const ov = document.getElementById('pwOverlay');
-  ov.style.display = 'flex';
+  document.getElementById('pwOverlay').style.display = 'flex';
   setTimeout(() => document.getElementById('pwInput').focus(), 50);
 }
 
 function toggleEditMode() {
-  if (isAuthenticated) {
-    isAuthenticated = false;
-    updateEditUI();
-  } else {
-    openPwModal();
-  }
+  if (isAuthenticated) { isAuthenticated = false; updateEditUI(); } 
+  else { openPwModal(); }
 }
 function closePwModal() {
   document.getElementById('pwOverlay').style.display = 'none';
@@ -479,13 +473,10 @@ function closePwModal() {
 function checkPassword() {
   const input = document.getElementById('pwInput').value;
   if (input === PASSWORD) {
-    isAuthenticated = true;
-    closePwModal();
-    updateEditUI();
+    isAuthenticated = true; closePwModal(); updateEditUI();
   } else {
     const err = document.getElementById('pwError');
-    err.style.display = 'block';
-    document.getElementById('pwInput').value = '';
+    err.style.display = 'block'; document.getElementById('pwInput').value = '';
     document.getElementById('pwInput').focus();
     setTimeout(() => err.style.display = 'none', 2500);
   }
@@ -494,14 +485,10 @@ function updateEditUI() {
   const editBtn = document.getElementById('editModeBtn');
   const addBtn = document.querySelector('.add-btn');
   if (isAuthenticated) {
-    editBtn.textContent = '✏️ Editando';
-    editBtn.style.borderColor = '#3ddc84';
-    editBtn.style.color = '#3ddc84';
+    editBtn.textContent = '✏️ Editando'; editBtn.style.borderColor = '#3ddc84'; editBtn.style.color = '#3ddc84';
     if (addBtn) addBtn.style.display = 'flex';
   } else {
-    editBtn.textContent = '🔐 Editar';
-    editBtn.style.borderColor = '';
-    editBtn.style.color = '';
+    editBtn.textContent = '🔐 Editar'; editBtn.style.borderColor = ''; editBtn.style.color = '';
     if (addBtn) addBtn.style.display = 'none';
   }
 }
@@ -510,11 +497,7 @@ function updateEditUI() {
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtziyjbrg/image/upload";
 const CLOUDINARY_PRESET = "parrilla_uploads";
 
-const accountColors = {
-  muba:             '#FF4D4F',
-  muba_the_agency:  '#1D4ED8',
-  andres_felipe:    '#10B981'
-};
+const accountColors = { muba: '#FF4D4F', muba_the_agency: '#1D4ED8', andres_felipe: '#10B981' };
 
 let posts = [];
 let currentDate = new Date();
@@ -529,105 +512,93 @@ let carouselUrls  = [];
 function setSyncStatus(state, msg) {
   const bar = document.getElementById('syncBar');
   const txt = document.getElementById('syncMsg');
-  bar.className = 'sync-bar ' + state;
-  txt.textContent = msg;
+  bar.className = 'sync-bar ' + state; txt.textContent = msg;
 }
 
-// ── LEER DATOS (CON CORRECCIÓN DE FECHAS) ──────────────────────────────────
+// ── LEER DATOS Y LIMPIAR LA FECHA ───────────────────────────────────────────
 async function loadPosts() {
   try {
     setSyncStatus('syncing', 'Cargando datos...');
     const res = await fetch(API_URL);
-    
     if (!res.ok) throw new Error('Error HTTP: ' + res.status);
     
     const data = await res.json();
+    if (data.length > 0 && data[0].id === 'error') throw new Error(data[0].copy); 
     
     posts = data.map(row => {
-      // 🛠️ AQUÍ ESTÁ LA CORRECCIÓN DE LA FECHA 🛠️
-      // Si Google manda "2026-05-07T05:00:00.000Z", lo cortamos a "2026-05-07"
+      // 🛠️ LA ASPIRADORA DE FECHAS (Extrae SÓLO el YYYY-MM-DD sin importar el desastre de Google)
       let cleanDate = '';
       if (row.date) {
-        cleanDate = row.date.toString().split('T')[0];
+          let dStr = row.date.toString();
+          let match = dStr.match(/(\d{4})-(\d{2})-(\d{2})/); // Busca 2026-05-07
+          if (match) {
+              cleanDate = match[0];
+          } else {
+              // Si viene en otro formato, intenta convertirlo
+              let tmp = new Date(dStr);
+              if (!isNaN(tmp)) {
+                  cleanDate = tmp.getFullYear() + '-' + String(tmp.getMonth()+1).padStart(2,'0') + '-' + String(tmp.getDate()).padStart(2,'0');
+              } else {
+                  cleanDate = dStr; // Último recurso
+              }
+          }
       }
 
       return {
-        id: row.id, 
-        network: row.network, 
-        type: row.type, 
-        date: cleanDate, 
-        time: row.time, 
-        copy: row.copy, 
-        status: row.status, 
-        image: row.image || '',
-        drive: row.drive || '', 
-        account: row.account || 'muba',
+        id: row.id, network: row.network, type: row.type, date: cleanDate,
+        time: row.time, copy: row.copy, status: row.status, image: row.image || '',
+        drive: row.drive || '', account: row.account || 'muba',
       };
     }).filter(p => p.id);
     
     setSyncStatus('synced', `✓ Conectado · ${posts.length} publicaciones`);
     render();
   } catch(e) {
-    console.error(e);
-    setSyncStatus('error', '✗ Error: ' + e.message);
-    posts = [];
-    render();
+    setSyncStatus('error', '✗ Error al cargar');
+    posts = []; render();
   }
 }
 
-// ── GUARDAR DATOS (FORMULARIO INVISIBLE) ───────────────────────────
+// ── ENVIAR AL GOOGLE SHEETS ───────────────────────────────────────────
 function sendToGoogle(action, data) {
     return new Promise((resolve, reject) => {
         try {
             const form = document.createElement('form');
-            form.action = API_URL;
-            form.method = 'POST';
-            form.target = 'hidden_iframe'; 
-            form.style.display = 'none';
+            form.action = API_URL; form.method = 'POST'; form.target = 'hidden_iframe'; form.style.display = 'none';
 
-            const inputAction = document.createElement('input');
-            inputAction.type = 'hidden';
-            inputAction.name = 'action';
-            inputAction.value = action;
+            const inputAction = document.createElement('input'); inputAction.type = 'hidden'; inputAction.name = 'action'; inputAction.value = action;
+            const inputData = document.createElement('input'); inputData.type = 'hidden'; inputData.name = 'data'; inputData.value = JSON.stringify(data);
 
-            const inputData = document.createElement('input');
-            inputData.type = 'hidden';
-            inputData.name = 'data';
-            inputData.value = JSON.stringify(data);
-
-            form.appendChild(inputAction);
-            form.appendChild(inputData);
-            document.body.appendChild(form);
-
+            form.appendChild(inputAction); form.appendChild(inputData); document.body.appendChild(form);
             form.submit();
 
-            setTimeout(() => {
-                document.body.removeChild(form);
-                resolve();
-            }, 1500); 
-
-        } catch (err) {
-            reject(new Error("Falló el envío invisible: " + err.message));
-        }
+            setTimeout(() => { document.body.removeChild(form); resolve(); }, 1500); 
+        } catch (err) { reject(new Error("Falló envío: " + err.message)); }
     });
 }
 
+// ── FILTRO A PRUEBA DE FALLOS ───────────────────────────────────────────────
 function getMonthPosts() {
   const y = currentDate.getFullYear(), m = currentDate.getMonth();
   return posts.filter(p => {
     if (!p.date) return false;
-    const d = new Date(p.date + 'T00:00:00');
-    return d.getFullYear() === y && d.getMonth() === m && (currentAccount==='all' || p.account===currentAccount)
-      && (currentFilter === 'all' || p.network === currentFilter);
+    // Compara la fecha separando el texto. NUNCA más fallará por zonas horarias.
+    const parts = p.date.split('-'); 
+    if (parts.length >= 3) {
+        const postY = parseInt(parts[0], 10);
+        const postM = parseInt(parts[1], 10) - 1; // Enero es 0 en JS
+        return postY === y && postM === m 
+          && (currentAccount==='all' || p.account===currentAccount)
+          && (currentFilter === 'all' || p.network === currentFilter);
+    }
+    return false;
   });
 }
 
 function renderStats() {
   const mp = getMonthPosts();
-  const total = mp.length;
-  const pub   = mp.filter(p => p.status === 'publicado').length;
-  const apr   = mp.filter(p => p.status === 'aprobado').length;
-  const bor   = mp.filter(p => p.status === 'borrador').length;
+  const total = mp.length; const pub = mp.filter(p => p.status === 'publicado').length;
+  const apr = mp.filter(p => p.status === 'aprobado').length; const bor = mp.filter(p => p.status === 'borrador').length;
   const withImg = mp.filter(p => p.image && p.image !== 'null' && p.image !== '').length;
   document.getElementById('statsBar').innerHTML = `
     <div class="stat-card"><div class="stat-icon" style="background:rgba(161,139,250,0.12);">📅</div><div class="stat-info"><strong style="color:#a78bfa;">${total}</strong><span>Total</span></div></div>
@@ -643,24 +614,26 @@ function renderCalendar() {
   const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('monthLabel').textContent = `${months[m]} ${y}`;
   const firstDay = new Date(y, m, 1);
-  let startDow = firstDay.getDay();
-  startDow = startDow === 0 ? 6 : startDow - 1;
+  let startDow = firstDay.getDay(); startDow = startDow === 0 ? 6 : startDow - 1;
   const daysInMonth = new Date(y, m+1, 0).getDate();
   const prevDays = new Date(y, m, 0).getDate();
   const today = new Date();
-  const grid = document.getElementById('calendarGrid');
-  grid.innerHTML = '';
+  const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
+  
   const mp = getMonthPosts();
   const postsByDay = {};
   mp.forEach(p => {
-    const d = new Date(p.date + 'T00:00:00').getDate();
-    if (!postsByDay[d]) postsByDay[d] = [];
-    postsByDay[d].push(p);
+    const parts = p.date.split('-');
+    if(parts.length >= 3) {
+       const dNum = parseInt(parts[2], 10);
+       if (!postsByDay[dNum]) postsByDay[dNum] = [];
+       postsByDay[dNum].push(p);
+    }
   });
+
   const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
   for (let i = 0; i < totalCells; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell';
+    const cell = document.createElement('div'); cell.className = 'cal-cell';
     let dayNum, isCurrentMonth = true;
     if (i < startDow) { dayNum = prevDays - startDow + i + 1; isCurrentMonth = false; }
     else if (i >= startDow + daysInMonth) { dayNum = i - startDow - daysInMonth + 1; isCurrentMonth = false; }
@@ -669,20 +642,18 @@ function renderCalendar() {
     const isToday = isCurrentMonth && y === today.getFullYear() && m === today.getMonth() && dayNum === today.getDate();
     if (isToday) cell.classList.add('today');
     cell.innerHTML = `<div class="day-num">${dayNum}</div>`;
+    
     if (isCurrentMonth && postsByDay[dayNum]) {
       const dayPosts = postsByDay[dayNum].sort((a,b) => (a.time||'').localeCompare(b.time||''));
       const withImg = dayPosts.find(p => p.image && p.image !== 'null' && p.image !== '');
       if (withImg) {
-        const th = document.createElement('img');
-        th.className = 'cal-thumb'; th.src = getFirstImage(withImg.image);
+        const th = document.createElement('img'); th.className = 'cal-thumb'; th.src = getFirstImage(withImg.image);
         th.onclick = e => { e.stopPropagation(); openLightbox(getFirstImage(withImg.image)); };
         cell.appendChild(th);
       }
       dayPosts.slice(0, 2).forEach(p => {
-        const pill = document.createElement('div');
-        pill.className = `post-pill ${p.network}`;
-        const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
-        const color = accountColors[p.account] || '#888';
+        const pill = document.createElement('div'); pill.className = `post-pill ${p.network}`;
+        const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const color = accountColors[p.account] || '#888';
         const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
         pill.style.borderLeft = `4px solid ${color}`;
         pill.innerHTML = `<span style="background:${color};color:#fff;padding:1px 5px;border-radius:4px;font-size:0.6rem;font-weight:700;flex-shrink:0;white-space:nowrap;">${acLabel}</span> ${icons[p.network]||''} ${p.time||''} ${p.type||''}`;
@@ -690,10 +661,8 @@ function renderCalendar() {
         cell.appendChild(pill);
       });
       if (dayPosts.length > 2) {
-        const more = document.createElement('div');
-        more.className = 'more-posts';
-        more.textContent = `+${dayPosts.length - 2} más`;
-        more.onclick = e => e.stopPropagation();
+        const more = document.createElement('div'); more.className = 'more-posts';
+        more.textContent = `+${dayPosts.length - 2} más`; more.onclick = e => e.stopPropagation();
         cell.appendChild(more);
       }
     }
@@ -709,31 +678,23 @@ function renderGallery() {
   const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
   const grid = document.getElementById('galleryGrid');
   if (mp.length === 0) { grid.innerHTML = `<div class="empty-table" style="grid-column:1/-1"><div>📭</div>Sin publicaciones este mes</div>`; return; }
-  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
-  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
   grid.innerHTML = mp.map(p => {
-    const d = new Date((p.date||'2000-01-01') + 'T00:00:00');
-    const ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+    const parts = (p.date||'').split('-');
+    let ds = p.date;
+    if(parts.length >= 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
+    }
     const hasImg = p.image && p.image !== 'null' && p.image !== '';
-    const acColor = accountColors[p.account] || '#888';
-    const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
-    const thumbUrl = getFirstImage(p.image);
-    const isCarousel = p.image && p.image.startsWith('CAROUSEL:');
-    const imgHtml = hasImg
-      ? `<img src="${thumbUrl}" alt="screenshot" onclick="event.stopPropagation();openLightbox('${thumbUrl}')">${isCarousel ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:10px;">❏ Carrusel</div>` : ''}`
-      : `<div class="gallery-no-img"><span>🖼</span><p>Sin imagen</p></div>`;
+    const acColor = accountColors[p.account] || '#888'; const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+    const thumbUrl = getFirstImage(p.image); const isCarousel = p.image && p.image.startsWith('CAROUSEL:');
+    const imgHtml = hasImg ? `<img src="${thumbUrl}" alt="screenshot" onclick="event.stopPropagation();openLightbox('${thumbUrl}')">${isCarousel ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:10px;">❏ Carrusel</div>` : ''}` : `<div class="gallery-no-img"><span>🖼</span><p>Sin imagen</p></div>`;
     return `<div class="gallery-card ${p.network}" onclick="openPreview('${p.id}')" style="border-top:3px solid ${acColor};">
-      <div class="gallery-img-wrap">
-        ${imgHtml}
-        <div class="gallery-network-badge ${p.network}">${icons[p.network]||''} ${labels[p.network]||p.network}</div>
-        <div class="gallery-status ${p.status}"></div>
-      </div>
+      <div class="gallery-img-wrap">${imgHtml}<div class="gallery-network-badge ${p.network}">${icons[p.network]||''} ${labels[p.network]||p.network}</div><div class="gallery-status ${p.status}"></div></div>
       <div class="gallery-info">
         <div style="margin-bottom:6px;"><span style="background:${acColor};color:#fff;padding:2px 8px;border-radius:5px;font-size:0.68rem;font-weight:700;">${acLabel}</span></div>
-        <div class="gallery-meta">
-          <span class="gallery-date">📅 ${ds} · ${p.time||''}h</span>
-          <span class="gallery-type">${p.type||''}</span>
-        </div>
+        <div class="gallery-meta"><span class="gallery-date">📅 ${ds} · ${p.time||''}h</span><span class="gallery-type">${p.type||''}</span></div>
         <div class="gallery-copy">${p.copy||'—'}</div>
       </div>
     </div>`;
@@ -744,25 +705,23 @@ function renderList() {
   const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
   const body = document.getElementById('listBody');
   if (mp.length === 0) { body.innerHTML = `<tr><td colspan="7"><div class="empty-table"><div>📭</div>Sin publicaciones este mes</div></td></tr>`; return; }
-  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' };
-  const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
+  const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
   body.innerHTML = mp.map(p => {
-    const d = new Date((p.date||'2000-01-01') + 'T00:00:00');
-    const ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
+    const parts = (p.date||'').split('-');
+    let ds = p.date;
+    if(parts.length >= 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short', year:'numeric'});
+    }
     const hasImg = p.image && p.image !== 'null' && p.image !== '';
-    const acColor = accountColors[p.account] || '#888';
-    const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+    const acColor = accountColors[p.account] || '#888'; const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
     const listThumb = getFirstImage(p.image);
-    const thumbHtml = hasImg
-      ? `<img class="thumb-sm" src="${listThumb}" alt="thumb" onclick="event.stopPropagation();openLightbox('${listThumb}')">`
-      : `<div class="no-thumb">🖼</div>`;
+    const thumbHtml = hasImg ? `<img class="thumb-sm" src="${listThumb}" alt="thumb" onclick="event.stopPropagation();openLightbox('${listThumb}')">` : `<div class="no-thumb">🖼</div>`;
     return `<tr onclick="openPreview('${p.id}')" style="border-left:3px solid ${acColor};">
-      <td>${thumbHtml}</td>
-      <td><strong>${ds}</strong><br><span style="color:var(--text-muted);font-size:0.78rem;">${p.time||''} h</span></td>
+      <td>${thumbHtml}</td><td><strong>${ds}</strong><br><span style="color:var(--text-muted);font-size:0.78rem;">${p.time||''} h</span></td>
       <td><span style="background:${acColor};color:#fff;padding:3px 10px;border-radius:6px;font-size:0.73rem;font-weight:700;white-space:nowrap;">${acLabel}</span></td>
       <td><span class="network-badge ${p.network}">${icons[p.network]||''} ${labels[p.network]||p.network}</span></td>
-      <td><span class="content-type-tag">${p.type||''}</span></td>
-      <td><div class="copy-text">${p.copy||'—'}</div></td>
+      <td><span class="content-type-tag">${p.type||''}</span></td><td><div class="copy-text">${p.copy||'—'}</div></td>
       <td><span class="status-dot ${p.status}">${(p.status||'').charAt(0).toUpperCase()+(p.status||'').slice(1)}</span></td>
     </tr>`;
   }).join('');
@@ -776,15 +735,10 @@ function renderGrid() {
   ];
   const container = document.getElementById('igProfiles');
 
-  const igPosts = posts
-    .filter(p => p.network === 'instagram' 
-      && ['Foto','Carrusel','Reel'].includes(p.type)
-      && (currentAccount === 'all' || p.account === currentAccount))
+  const igPosts = posts.filter(p => p.network === 'instagram' && ['Foto','Carrusel','Reel'].includes(p.type) && (currentAccount === 'all' || p.account === currentAccount))
     .sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
 
-  const accountsToShow = currentAccount === 'all'
-    ? accounts
-    : accounts.filter(a => a.key === currentAccount);
+  const accountsToShow = currentAccount === 'all' ? accounts : accounts.filter(a => a.key === currentAccount);
 
   container.innerHTML = accountsToShow.map(acc => {
     const accPosts = igPosts.filter(p => p.account === acc.key);
@@ -792,54 +746,34 @@ function renderGrid() {
     for (let i = 0; i < 12; i++) {
       const p = accPosts[i] || null;
       if (p) {
-        const hasImg = p.image && p.image !== 'null' && p.image !== '';
-        const igThumb = getFirstImage(p.image);
-        const isDraft = p.status === 'borrador';
-        const isApproved = p.status === 'aprobado';
-        cells.push(`
-          <div class="ig-cell" onclick="openPreview('${p.id}')">
-            ${hasImg
-              ? `<img src="${igThumb}" alt="${p.type}">`
-              : `<div class="ig-cell-empty">🖼</div>`}
+        const hasImg = p.image && p.image !== 'null' && p.image !== ''; const igThumb = getFirstImage(p.image);
+        const isDraft = p.status === 'borrador'; const isApproved = p.status === 'aprobado';
+        cells.push(`<div class="ig-cell" onclick="openPreview('${p.id}')">
+            ${hasImg ? `<img src="${igThumb}" alt="${p.type}">` : `<div class="ig-cell-empty">🖼</div>`}
             ${p.type === 'Reel' || p.type === 'Video' ? `<div class="ig-reel-icon">▶</div>` : ''}
             ${p.type === 'Carrusel' ? `<div class="ig-carousel-icon">❏</div>` : ''}
-            <div class="ig-cell-overlay">
-              <span class="ig-type-badge">${p.type||'Foto'}</span>
-            </div>
+            <div class="ig-cell-overlay"><span class="ig-type-badge">${p.type||'Foto'}</span></div>
             ${isDraft ? `<div class="ig-draft-overlay"><span class="ig-draft-badge">BORRADOR</span></div>` : ''}
             ${isApproved ? `<div class="ig-draft-overlay"><span class="ig-draft-badge" style="background:rgba(61,220,132,0.9);">APROBADO</span></div>` : ''}
           </div>`);
-      } else {
-        cells.push(`<div class="ig-cell"><div class="ig-cell-empty">+</div></div>`);
-      }
+      } else { cells.push(`<div class="ig-cell"><div class="ig-cell-empty">+</div></div>`); }
     }
     const initials = acc.label.split(' ').map(w=>w[0]).join('').slice(0,2);
     const pubCount = accPosts.filter(p=>p.status==='publicado').length;
     return `
       <div class="ig-profile">
-        <div class="ig-phone">
-          <div class="ig-phone-notch"></div>
+        <div class="ig-phone"><div class="ig-phone-notch"></div>
           <div class="ig-screen">
-            <div class="ig-topbar">
-              <span class="ig-topbar-name">${acc.handle}</span>
-              <span class="ig-topbar-icons">＋ ☰</span>
-            </div>
+            <div class="ig-topbar"><span class="ig-topbar-name">${acc.handle}</span><span class="ig-topbar-icons">＋ ☰</span></div>
             <div class="ig-profile-header">
               <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
                 <div class="ig-avatar" style="background:linear-gradient(135deg,${acc.color},${acc.color}99);">${initials}</div>
-                <div class="ig-stats">
-                  <div class="ig-stat"><strong>${pubCount}</strong><span>publicaciones</span></div>
-                  <div class="ig-stat"><strong>—</strong><span>seguidores</span></div>
-                  <div class="ig-stat"><strong>—</strong><span>siguiendo</span></div>
-                </div>
+                <div class="ig-stats"><div class="ig-stat"><strong>${pubCount}</strong><span>publicaciones</span></div><div class="ig-stat"><strong>—</strong><span>seguidores</span></div><div class="ig-stat"><strong>—</strong><span>siguiendo</span></div></div>
               </div>
               <div class="ig-bio"><strong style="font-size:0.78rem;">${acc.label}</strong><br>📅 Parrilla de contenido</div>
               <button class="ig-follow-btn">Seguir</button>
             </div>
-            <div class="ig-tabs">
-              <div class="ig-tab active">⊞</div>
-              <div class="ig-tab">🏷</div>
-            </div>
+            <div class="ig-tabs"><div class="ig-tab active">⊞</div><div class="ig-tab">🏷</div></div>
             <div class="ig-grid">${cells.join('')}</div>
           </div>
         </div>
@@ -857,228 +791,105 @@ function render() {
 }
 
 function changeMonth(dir) { currentDate.setMonth(currentDate.getMonth() + dir); render(); }
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  render();
-}
-
-function setAccount(a) {
-  currentAccount = a;
-  render();
-}
-
+function setFilter(f, btn) { currentFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
+function setAccount(a) { currentAccount = a; render(); }
 function setView(v, btn) {
-  currentView = v;
-  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  ['calendarView','galleryView','listView','gridView'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
+  currentView = v; document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+  ['calendarView','galleryView','listView','gridView'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
   const map = { calendar:'calendarView', gallery:'galleryView', list:'listView', grid:'gridView' };
-  const target = document.getElementById(map[v]);
-  if (target) target.style.display = 'block';
+  const target = document.getElementById(map[v]); if (target) target.style.display = 'block';
   render();
 }
-
 function exportCSV() {
   const headers = ['id','network','type','date','time','copy','status','image','drive','account'];
   const rows = posts.map(p => headers.map(h => `"${(p[h]||'').toString().replace(/"/g,'""')}"`).join(','));
   const blob = new Blob([headers.join(',') + '\n' + rows.join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = 'parrilla.csv'; a.click();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'parrilla.csv'; a.click();
 }
 
 function onTypeChange(type) {
-  const uploadZone = document.getElementById('uploadZone');
-  const carouselSection = document.getElementById('carouselSection');
+  const uploadZone = document.getElementById('uploadZone'); const carouselSection = document.getElementById('carouselSection');
   if (!uploadZone || !carouselSection) return;
   const singleGroup = uploadZone.closest('.form-group') || uploadZone.parentElement;
-  if (type === 'Carrusel') {
-    singleGroup.style.display = 'none';
-    carouselSection.style.display = 'block';
-  } else {
-    singleGroup.style.display = 'block';
-    carouselSection.style.display = 'none';
-  }
+  if (type === 'Carrusel') { singleGroup.style.display = 'none'; carouselSection.style.display = 'block'; } 
+  else { singleGroup.style.display = 'block'; carouselSection.style.display = 'none'; }
 }
 
 function parseCarouselImages(raw) {
   if (!raw || raw === 'null' || raw === '') return null;
-  if (raw.startsWith('CAROUSEL:')) {
-    const urls = raw.replace('CAROUSEL:', '').split('|').filter(u => u.trim());
-    return urls.length > 0 ? urls : null;
-  }
+  if (raw.startsWith('CAROUSEL:')) { const urls = raw.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); return urls.length > 0 ? urls : null; }
   return null;
 }
 
 function getFirstImage(imageField) {
   if (!imageField || imageField === 'null' || imageField === '') return null;
-  if (imageField.startsWith('CAROUSEL:')) {
-    const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim());
-    return urls.length > 0 ? urls[0] : null;
-  }
+  if (imageField.startsWith('CAROUSEL:')) { const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); return urls.length > 0 ? urls[0] : null; }
   return imageField;
 }
 
-function handleCarouselUpload(event) {
-  addCarouselFiles(Array.from(event.target.files));
-  event.target.value = '';
-}
-
-function handleCarouselDrop(event) {
-  event.preventDefault();
-  document.getElementById('carouselDropZone').style.borderColor = '';
-  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-  addCarouselFiles(files);
-}
+function handleCarouselUpload(event) { addCarouselFiles(Array.from(event.target.files)); event.target.value = ''; }
+function handleCarouselDrop(event) { event.preventDefault(); document.getElementById('carouselDropZone').style.borderColor = ''; const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/')); addCarouselFiles(files); }
 
 function addCarouselFiles(files) {
   const remaining = 10 - carouselFiles.length - carouselUrls.length;
   if (remaining <= 0) { alert('Máximo 10 fotos por carrusel'); return; }
-  files.slice(0, remaining).forEach(file => {
-    carouselFiles.push({ file, objUrl: URL.createObjectURL(file) });
-  });
+  files.slice(0, remaining).forEach(file => { carouselFiles.push({ file, objUrl: URL.createObjectURL(file) }); });
   renderCarouselStrip();
 }
 
 function removeCarouselItem(index, isUrl) {
-  if (isUrl) {
-    carouselUrls.splice(index, 1);
-  } else {
-    URL.revokeObjectURL(carouselFiles[index].objUrl);
-    carouselFiles.splice(index, 1);
-  }
+  if (isUrl) { carouselUrls.splice(index, 1); } else { URL.revokeObjectURL(carouselFiles[index].objUrl); carouselFiles.splice(index, 1); }
   renderCarouselStrip();
 }
 
 function renderCarouselStrip() {
-  const strip = document.getElementById('carouselStrip');
-  const wrap  = document.getElementById('carouselPreviewStrip');
-  const count = document.getElementById('carouselCount');
+  const strip = document.getElementById('carouselStrip'); const wrap = document.getElementById('carouselPreviewStrip'); const count = document.getElementById('carouselCount');
   const total = carouselUrls.length + carouselFiles.length;
-
   if (total === 0) { wrap.style.display = 'none'; strip.innerHTML = ''; return; }
-  wrap.style.display = 'block';
-  count.textContent = `${total} foto${total !== 1 ? 's' : ''}`;
-
-  strip.innerHTML = '';
-
+  wrap.style.display = 'block'; count.textContent = `${total} foto${total !== 1 ? 's' : ''}`; strip.innerHTML = '';
   carouselUrls.forEach((url, i) => {
-    const thumb = document.createElement('div');
-    thumb.className = 'carousel-thumb';
-    const img = document.createElement('img');
-    img.src = url;
-    img.onclick = () => openLightbox(url);
-    const num = document.createElement('span');
-    num.className = 'carousel-thumb-num';
-    num.textContent = i + 1;
-    const del = document.createElement('button');
-    del.className = 'carousel-thumb-del';
-    del.textContent = '✕';
-    del.onclick = () => removeCarouselItem(i, true);
-    thumb.appendChild(img); thumb.appendChild(num); thumb.appendChild(del);
-    strip.appendChild(thumb);
+    const thumb = document.createElement('div'); thumb.className = 'carousel-thumb';
+    const img = document.createElement('img'); img.src = url; img.onclick = () => openLightbox(url);
+    const num = document.createElement('span'); num.className = 'carousel-thumb-num'; num.textContent = i + 1;
+    const del = document.createElement('button'); del.className = 'carousel-thumb-del'; del.textContent = '✕'; del.onclick = () => removeCarouselItem(i, true);
+    thumb.appendChild(img); thumb.appendChild(num); thumb.appendChild(del); strip.appendChild(thumb);
   });
-
   carouselFiles.forEach((item, i) => {
     const num = carouselUrls.length + i + 1;
-    const thumb = document.createElement('div');
-    thumb.className = 'carousel-thumb';
-    const img = document.createElement('img');
-    img.src = item.objUrl;
-    const numEl = document.createElement('span');
-    numEl.className = 'carousel-thumb-num';
-    numEl.textContent = num;
-    const del = document.createElement('button');
-    del.className = 'carousel-thumb-del';
-    del.textContent = '✕';
-    del.onclick = () => removeCarouselItem(i, false);
-    thumb.appendChild(img); thumb.appendChild(numEl); thumb.appendChild(del);
-    strip.appendChild(thumb);
+    const thumb = document.createElement('div'); thumb.className = 'carousel-thumb';
+    const img = document.createElement('img'); img.src = item.objUrl;
+    const numEl = document.createElement('span'); numEl.className = 'carousel-thumb-num'; numEl.textContent = num;
+    const del = document.createElement('button'); del.className = 'carousel-thumb-del'; del.textContent = '✕'; del.onclick = () => removeCarouselItem(i, false);
+    thumb.appendChild(img); thumb.appendChild(numEl); thumb.appendChild(del); strip.appendChild(thumb);
   });
 }
 
-function clearCarousel() {
-  carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl));
-  carouselFiles = [];
-  carouselUrls  = [];
-  renderCarouselStrip();
-}
-
-function showPreview(url) {
-  const wrap = document.getElementById('previewWrap');
-  const img = document.getElementById('previewImg');
-  const placeholder = document.getElementById('uploadPlaceholder');
-  if (!wrap || !img) return;
-  img.src = url;
-  wrap.style.display = 'block';
-  if (placeholder) placeholder.style.display = 'none';
-}
-
+function clearCarousel() { carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl)); carouselFiles = []; carouselUrls = []; renderCarouselStrip(); }
+function showPreview(url) { const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const placeholder = document.getElementById('uploadPlaceholder'); if (!wrap || !img) return; img.src = url; wrap.style.display = 'block'; if (placeholder) placeholder.style.display = 'none'; }
 function removeImage(e) { e.stopPropagation(); clearPreview(); }
+function clearPreview() { pendingImage = null; const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const placeholder = document.getElementById('uploadPlaceholder'); if (wrap) wrap.style.display = 'none'; if (img) img.src = ''; if (placeholder) placeholder.style.display = 'flex'; }
+function updateAccountBorder() { const acc = document.getElementById('fAccount') ? document.getElementById('fAccount').value : 'muba'; }
 
-function clearPreview() {
-  pendingImage = null;
-  const wrap = document.getElementById('previewWrap');
-  const img = document.getElementById('previewImg');
-  const placeholder = document.getElementById('uploadPlaceholder');
-  if (wrap) wrap.style.display = 'none';
-  if (img) img.src = '';
-  if (placeholder) placeholder.style.display = 'flex';
-}
-
-function updateAccountBorder() {
-  const acc = document.getElementById('fAccount') ? document.getElementById('fAccount').value : 'muba';
-}
-
-// ── PREVIEW ──
 function openPreview(id) {
-  const p = posts.find(x => x.id == id);
-  if (!p) return;
+  const p = posts.find(x => x.id == id); if (!p) return;
   const color = accountColors[p.account] || '#888';
   const statusStyles = { borrador:'background:#2a2a33;color:#7a7a8a;', aprobado:'background:rgba(255,201,74,0.15);color:#ffc94a;', publicado:'background:rgba(61,220,132,0.15);color:#3ddc84;' };
   const statusLabels = { borrador:'⚫ Borrador', aprobado:'🟡 Aprobado', publicado:'🟢 Publicado' };
-
   document.getElementById('previewAccDot').style.background = color;
-  document.getElementById('previewAccLabel').textContent = p.account;
-  document.getElementById('previewNetBadge').textContent = p.network;
-  document.getElementById('previewTypeBadge').textContent = p.type;
-  document.getElementById('previewDate').textContent = p.date;
-  document.getElementById('previewTime').textContent = p.time;
-  document.getElementById('previewStatus').textContent = statusLabels[p.status];
+  document.getElementById('previewAccLabel').textContent = p.account; document.getElementById('previewNetBadge').textContent = p.network;
+  document.getElementById('previewTypeBadge').textContent = p.type; document.getElementById('previewDate').textContent = p.date;
+  document.getElementById('previewTime').textContent = p.time; document.getElementById('previewStatus').textContent = statusLabels[p.status];
   document.getElementById('previewStatus').style.cssText = statusStyles[p.status];
-
-  const imgWrap = document.getElementById('previewImgWrap');
-  imgWrap.innerHTML = '';
+  const imgWrap = document.getElementById('previewImgWrap'); imgWrap.innerHTML = '';
   if (p.image && p.image !== 'null') {
     const urls = parseCarouselImages(p.image) || [p.image];
-    urls.forEach(url => {
-      const img = document.createElement('img');
-      img.src = url;
-      img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;';
-      img.onclick = () => openLightbox(url);
-      imgWrap.appendChild(img);
-    });
+    urls.forEach(url => { const img = document.createElement('img'); img.src = url; img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; img.onclick = () => openLightbox(url); imgWrap.appendChild(img); });
     imgWrap.style.display = 'block';
-  } else {
-    imgWrap.style.display = 'none';
-  }
-
-  document.getElementById('previewCopy').textContent = p.copy;
-  document.getElementById('previewCopyWrap').style.display = p.copy ? 'block' : 'none';
-  
-  const driveLink = document.getElementById('previewDriveLink');
-  driveLink.href = p.drive;
-  document.getElementById('previewDriveWrap').style.display = p.drive ? 'block' : 'none';
-
-  const editBtn = document.getElementById('previewEditBtn');
-  editBtn.style.display = isAuthenticated ? 'block' : 'none';
+  } else { imgWrap.style.display = 'none'; }
+  document.getElementById('previewCopy').textContent = p.copy; document.getElementById('previewCopyWrap').style.display = p.copy ? 'block' : 'none';
+  const driveLink = document.getElementById('previewDriveLink'); driveLink.href = p.drive; document.getElementById('previewDriveWrap').style.display = p.drive ? 'block' : 'none';
+  const editBtn = document.getElementById('previewEditBtn'); editBtn.style.display = isAuthenticated ? 'block' : 'none';
   editBtn.querySelector('button').onclick = () => { closePreview(); openModal(id); };
-  
   document.getElementById('previewOverlay').classList.add('open');
 }
 
@@ -1086,37 +897,21 @@ function closePreview() { document.getElementById('previewOverlay').classList.re
 
 function openModal(id = null, prefillDate = null) {
   if (!isAuthenticated) return;
-  editingId = id;
-  clearCarousel();
-  clearPreview();
+  editingId = id; clearCarousel(); clearPreview();
   if (id) {
     const p = posts.find(x => x.id == id);
-    document.getElementById('fAccount').value = p.account;
-    document.getElementById('fNetwork').value = p.network;
-    document.getElementById('fType').value = p.type;
-    document.getElementById('fDate').value = p.date;
-    document.getElementById('fTime').value = p.time;
-    document.getElementById('fCopy').value = p.copy;
-    document.getElementById('fStatus').value = p.status;
-    document.getElementById('fDrive').value = p.drive;
-    if (p.image.startsWith('CAROUSEL:')) {
-      carouselUrls = parseCarouselImages(p.image);
-      renderCarouselStrip();
-    } else {
-      pendingImage = p.image;
-      if (p.image) showPreview(p.image);
-    }
+    document.getElementById('fAccount').value = p.account; document.getElementById('fNetwork').value = p.network;
+    document.getElementById('fType').value = p.type; document.getElementById('fDate').value = p.date;
+    document.getElementById('fTime').value = p.time; document.getElementById('fCopy').value = p.copy;
+    document.getElementById('fStatus').value = p.status; document.getElementById('fDrive').value = p.drive;
+    if (p.image.startsWith('CAROUSEL:')) { carouselUrls = parseCarouselImages(p.image); renderCarouselStrip(); } 
+    else { pendingImage = p.image; if (p.image) showPreview(p.image); }
     onTypeChange(p.type);
-    document.getElementById('modalActions').innerHTML = `
-      <button class="btn-delete" onclick="deletePost()">Eliminar</button>
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
+    document.getElementById('modalActions').innerHTML = `<button class="btn-delete" onclick="deletePost()">Eliminar</button><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
   } else {
     document.getElementById('fDate').value = prefillDate || new Date().toISOString().split('T')[0];
     onTypeChange('Foto');
-    document.getElementById('modalActions').innerHTML = `
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
+    document.getElementById('modalActions').innerHTML = `<button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
   }
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -1125,99 +920,47 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 
 async function uploadToCloudinary(file) {
   try {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', CLOUDINARY_PRESET);
+    const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_PRESET);
     const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
     if (!res.ok) throw new Error("Preset inválido o bloqueado.");
-    const data = await res.json();
-    return data.secure_url;
-  } catch(e) {
-    throw new Error("Cloudinary falló: " + e.message);
-  }
+    const data = await res.json(); return data.secure_url;
+  } catch(e) { throw new Error("Cloudinary falló: " + e.message); }
 }
 
 async function savePost() {
   setBtnLoading(true);
   try {
-    const type = document.getElementById('fType').value;
-    let finalImage = pendingImage || '';
-
+    const type = document.getElementById('fType').value; let finalImage = pendingImage || '';
     if (type === 'Carrusel') {
       const uploaded = [];
-      for (const item of carouselFiles) {
-        const url = await uploadToCloudinary(item.file);
-        uploaded.push(url);
-      }
+      for (const item of carouselFiles) { const url = await uploadToCloudinary(item.file); uploaded.push(url); }
       finalImage = 'CAROUSEL:' + [...carouselUrls, ...uploaded].join('|');
     } else {
       const fileInput = document.getElementById('fImage');
-      if (fileInput.files && fileInput.files[0]) {
-        finalImage = await uploadToCloudinary(fileInput.files[0]);
-      }
+      if (fileInput.files && fileInput.files[0]) { finalImage = await uploadToCloudinary(fileInput.files[0]); }
     }
-
     const p = {
-      network:  document.getElementById('fNetwork').value,
-      type:     document.getElementById('fType').value,
-      date:     document.getElementById('fDate').value,
-      time:     document.getElementById('fTime').value,
-      copy:     document.getElementById('fCopy').value,
-      status:   document.getElementById('fStatus').value,
-      image:    finalImage,
-      drive:    document.getElementById('fDrive').value,
-      account:  document.getElementById('fAccount').value,
+      network: document.getElementById('fNetwork').value, type: document.getElementById('fType').value,
+      date: document.getElementById('fDate').value, time: document.getElementById('fTime').value,
+      copy: document.getElementById('fCopy').value, status: document.getElementById('fStatus').value,
+      image: finalImage, drive: document.getElementById('fDrive').value, account: document.getElementById('fAccount').value,
     };
-
-    if (editingId) {
-      p.id = editingId;
-      await sendToGoogle('update', p);
-    } else {
-      p.id = Date.now().toString();
-      await sendToGoogle('create', p);
-    }
-    
+    if (editingId) { p.id = editingId; await sendToGoogle('update', p); } 
+    else { p.id = Date.now().toString(); await sendToGoogle('create', p); }
     setTimeout(() => location.reload(), 1500);
-    
-  } catch(e) {
-    alert('🚨 ERROR AL GUARDAR:\n\n' + e.message);
-    setBtnLoading(false);
-  } 
+  } catch(e) { alert('🚨 ERROR AL GUARDAR:\n\n' + e.message); setBtnLoading(false); } 
 }
 
 async function deletePost() {
   if (!confirm('¿Seguro que quieres eliminar esta publicación?')) return;
-  try {
-      await sendToGoogle('delete', { id: editingId });
-      setTimeout(() => location.reload(), 1500);
-  } catch(e) {
-      alert("Error al eliminar: " + e.message);
-  }
+  try { await sendToGoogle('delete', { id: editingId }); setTimeout(() => location.reload(), 1500); } 
+  catch(e) { alert("Error al eliminar: " + e.message); }
 }
 
-function handleImageUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => showPreview(ev.target.result);
-  reader.readAsDataURL(file);
-}
-
-function openLightbox(url) {
-  const lb = document.getElementById('lightbox');
-  document.getElementById('lightboxImg').src = url;
-  lb.classList.add('open');
-}
-
+function handleImageUpload(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => showPreview(ev.target.result); reader.readAsDataURL(file); }
+function openLightbox(url) { const lb = document.getElementById('lightbox'); document.getElementById('lightboxImg').src = url; lb.classList.add('open'); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
-
-function setBtnLoading(loading) {
-  const btn = document.getElementById('btnSave');
-  if (btn) {
-    btn.disabled = loading;
-    btn.textContent = loading ? 'Guardando...' : 'Guardar';
-  }
-}
+function setBtnLoading(loading) { const btn = document.getElementById('btnSave'); if (btn) { btn.disabled = loading; btn.textContent = loading ? 'Guardando...' : 'Guardar'; } }
 
 window.onload = loadPosts;
 </script>
