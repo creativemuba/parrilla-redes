@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parrilla de Redes Sociales</title>
+<title>Parrilla de Redes Sociales - MUBA</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -224,7 +224,6 @@
   .ig-profile-label{text-align:center;margin-top:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;color:var(--text-muted);}
   .ig-draft-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   .ig-draft-badge{background:rgba(255,201,74,0.9);color:#000;padding:2px 6px;border-radius:4px;font-size:0.58rem;font-weight:700;}
-  @media(max-width:768px){.cal-cell{min-height:70px;padding:6px;}.form-grid{grid-template-columns:1fr;}.gallery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}}
 </style>
 </head>
 <body>
@@ -278,7 +277,7 @@
 
 <div class="controls">
   <div class="filters">
-    <button class="filter-btn active" data-filter="all"       onclick="setFilter('all',this)">Todas</button>
+    <button class="filter-btn active" data-filter="all"        onclick="setFilter('all',this)">Todas</button>
     <button class="filter-btn"        data-filter="instagram" onclick="setFilter('instagram',this)">📸 Instagram</button>
     <button class="filter-btn"        data-filter="facebook"  onclick="setFilter('facebook',this)">👥 Facebook</button>
     <button class="filter-btn"        data-filter="tiktok"    onclick="setFilter('tiktok',this)">🎵 TikTok</button>
@@ -481,8 +480,8 @@
 </div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────
-const API = 'https://sheetdb.io/api/v1/gihhtmloj6405';
+// ── CONFIGURACIÓN AUTOMÁTICA API ───────────────────────────────────────────
+const API_URL = 'https://script.google.com/macros/s/AKfycbwrP362zUYraQ_ZtWkO7vO087GxUAt7e2scYKZwueN8O79VQ4eFL3I14AtUkOuVJ3BA/exec'; 
 
 // ── CONTRASEÑA ────────────────────────────────────────────────────────────
 const PASSWORD = 'MubaRedes123789';
@@ -567,18 +566,16 @@ function setSyncStatus(state, msg) {
   txt.textContent = msg;
 }
 
-// ── SHEETDB API ───────────────────────────────────────────────────────────
+// ── API CALLS ───────────────────────────────────────────────────────────
 async function loadPosts() {
   try {
-    setSyncStatus('syncing', 'Cargando publicaciones desde Google Sheets...');
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(API, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error('Error ' + res.status);
+    setSyncStatus('syncing', 'Cargando datos desde la nube...');
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error('Error al cargar');
+    
     const data = await res.json();
+    
     posts = data.map(row => {
-      const img = row.image || '';
       return {
         id: row.id,
         network: row.network,
@@ -587,40 +584,45 @@ async function loadPosts() {
         time: row.time,
         copy: row.copy,
         status: row.status,
-        image: img,
+        image: row.image || '',
         drive: row.drive || '',
         account: row.account || 'muba',
       };
     }).filter(p => p.id);
-    setSyncStatus('synced', `✓ Sincronizado · ${posts.length} publicaciones`);
+    
+    setSyncStatus('synced', `✓ Conectado · ${posts.length} publicaciones`);
     render();
   } catch(e) {
-    setSyncStatus('error', '✗ No se pudo conectar con los datos');
+    console.error(e);
+    setSyncStatus('error', '✗ Error de conexión con la API de Google');
     posts = [];
     render();
   }
 }
 
 async function createPost(p) {
-  const res = await fetch(API, {
+  p.id = Date.now().toString(); 
+  const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: [p] })
+    body: JSON.stringify({ action: 'create', data: p })
   });
-  if (!res.ok) throw new Error('Error al guardar');
+  if (!res.ok) throw new Error('Error al crear');
 }
 
 async function updatePost(id, p) {
-  const res = await fetch(`${API}/id/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: p })
+  p.id = id; 
+  const res = await fetch(API_URL, {
+    method: 'POST', 
+    body: JSON.stringify({ action: 'update', data: p })
   });
   if (!res.ok) throw new Error('Error al actualizar');
 }
 
 async function deletePostAPI(id) {
-  const res = await fetch(`${API}/id/${id}`, { method: 'DELETE' });
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', data: { id: id } })
+  });
   if (!res.ok) throw new Error('Error al eliminar');
 }
 
@@ -1189,17 +1191,17 @@ async function savePost() {
     if (editingId) {
       await updatePost(editingId, p);
     } else {
-      p.id = Date.now();
+      p.id = Date.now().toString();
       await createPost(p);
     }
     location.reload();
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('Error al guardar datos: ' + e.message);
   } finally { setBtnLoading(false); }
 }
 
 async function deletePost() {
-  if (!confirm('¿Eliminar?')) return;
+  if (!confirm('¿Seguro que quieres eliminar esta publicación?')) return;
   await deletePostAPI(editingId);
   location.reload();
 }
@@ -1224,7 +1226,7 @@ function setBtnLoading(loading) {
   const btn = document.getElementById('btnSave');
   if (btn) {
     btn.disabled = loading;
-    btn.textContent = loading ? '...' : 'Guardar';
+    btn.textContent = loading ? 'Guardando...' : 'Guardar';
   }
 }
 
