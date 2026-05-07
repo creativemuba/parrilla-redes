@@ -570,23 +570,16 @@ function setSyncStatus(state, msg) {
 async function loadPosts() {
   try {
     setSyncStatus('syncing', 'Cargando datos desde la nube...');
+    const res = await fetch(API_URL);
     
-    // Configuración para evitar bloqueos CORS en la lectura inicial
-    const res = await fetch(API_URL, { redirect: 'follow' });
-    
-    // Si Google nos bloquea porque está pidiendo iniciar sesión, lo detectamos aquí:
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.indexOf("text/html") !== -1) {
-        throw new Error("La API está bloqueada. Ve a Apps Script y asegúrate de que 'Quién tiene acceso' sea 'Cualquier persona'.");
+    // Si redirecciona a un inicio de sesión de Google
+    if (res.redirected && res.url.includes("accounts.google.com")) {
+        throw new Error("Permisos de Google bloqueados. Asegúrate de configurar 'Cualquier persona'.");
     }
-
-    if (!res.ok) throw new Error('Error de conexión HTTP: ' + res.status);
+    
+    if (!res.ok) throw new Error('Error HTTP: ' + res.status);
     
     const data = await res.json();
-    
-    if (data.length > 0 && data[0].id === 'error') {
-        throw new Error(data[0].copy); 
-    }
     
     posts = data.map(row => {
       return {
@@ -606,19 +599,23 @@ async function loadPosts() {
   }
 }
 
-// FUNCION BLINDADA PARA EVITAR EL "FAILED TO FETCH"
+// FUNCION ANTI-BLOQUEOS (USANDO FORM-URLENCODED PARA EVADIR EL CORS Y EL PREFLIGHT)
 async function sendToGoogle(action, data) {
     try {
-        const payload = JSON.stringify({ action: action, data: data });
+        const formData = new URLSearchParams();
+        formData.append('action', action);
+        formData.append('data', JSON.stringify(data));
+
         await fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors', /* ESTO EVITA EL ERROR CORS AL GUARDAR */
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: payload
+            body: formData,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
         });
         return true;
     } catch(err) {
-        throw new Error("No se pudo contactar con Google Sheets.");
+        throw new Error("Error de conexión al enviar: " + err.message);
     }
 }
 
@@ -729,4 +726,12 @@ function renderGallery() {
     const d = new Date((p.date||'2000-01-01') + 'T00:00:00');
     const ds = d.toLocaleDateString('es-ES', {day:'2-digit', month:'short'});
     const hasImg = p.image && p.image !== 'null' && p.image !== '';
-    const acColor = accountColors[p.account
+    const acColor = accountColors[p.account] || '#888';
+    const acLabel = (p.account||'muba').replaceAll('_',' ').toUpperCase();
+    const thumbUrl = getFirstImage(p.image);
+    const isCarousel = p.image && p.image.startsWith('CAROUSEL:');
+    const imgHtml = hasImg
+      ? `<img src="${thumbUrl}" alt="screenshot" onclick="event.stopPropagation();openLightbox('${thumbUrl}')">${isCarousel ? `<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:10px;">❏ Carrusel</div>` : ''}`
+      : `<div class="gallery-no-img"><span>🖼</span><p>Sin imagen</p></div>`;
+    return `<div class="gallery-card ${p.network}" onclick="openPreview('${p.id}')" style="border-top:3px solid ${acColor};">
+      <div class="
