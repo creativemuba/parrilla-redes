@@ -228,6 +228,8 @@
 </head>
 <body>
 
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
 <div id="pwOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
   <div style="background:#141417;border:1px solid #2a2a33;border-radius:20px;padding:36px;width:100%;max-width:340px;text-align:center;">
     <div style="font-size:2rem;margin-bottom:12px;">🔐</div>
@@ -572,7 +574,6 @@ async function loadPosts() {
     setSyncStatus('syncing', 'Cargando datos desde la nube...');
     const res = await fetch(API_URL);
     
-    // Si redirecciona a un inicio de sesión de Google
     if (res.redirected && res.url.includes("accounts.google.com")) {
         throw new Error("Permisos de Google bloqueados. Asegúrate de configurar 'Cualquier persona'.");
     }
@@ -580,6 +581,10 @@ async function loadPosts() {
     if (!res.ok) throw new Error('Error HTTP: ' + res.status);
     
     const data = await res.json();
+    
+    if (data.length > 0 && data[0].id === 'error') {
+        throw new Error(data[0].copy); 
+    }
     
     posts = data.map(row => {
       return {
@@ -599,24 +604,49 @@ async function loadPosts() {
   }
 }
 
-// FUNCION ANTI-BLOQUEOS (USANDO FORM-URLENCODED PARA EVADIR EL CORS Y EL PREFLIGHT)
-async function sendToGoogle(action, data) {
-    try {
-        const formData = new URLSearchParams();
-        formData.append('action', action);
-        formData.append('data', JSON.stringify(data));
+// ── EL HACK DEFINITIVO DEL FORMULARIO INVISIBLE ──
+function sendToGoogle(action, data) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Creamos un formulario en memoria
+            const form = document.createElement('form');
+            form.action = API_URL;
+            form.method = 'POST';
+            // Le decimos que no recargue la página, sino que la respuesta vaya al iframe invisible
+            form.target = 'hidden_iframe'; 
+            form.style.display = 'none';
 
-        await fetch(API_URL, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        });
-        return true;
-    } catch(err) {
-        throw new Error("Error de conexión al enviar: " + err.message);
-    }
+            // Creamos el campo action
+            const inputAction = document.createElement('input');
+            inputAction.type = 'hidden';
+            inputAction.name = 'action';
+            inputAction.value = action;
+
+            // Creamos el campo data
+            const inputData = document.createElement('input');
+            inputData.type = 'hidden';
+            inputData.name = 'data';
+            inputData.value = JSON.stringify(data);
+
+            // Metemos los campos al formulario y el formulario a la página
+            form.appendChild(inputAction);
+            form.appendChild(inputData);
+            document.body.appendChild(form);
+
+            // Enviamos el formulario (Esto JAMÁS da error de CORS)
+            form.submit();
+
+            // Esperamos un momento asumiendo éxito, ya que Google lo recibirá
+            // y limpiamos el formulario temporal
+            setTimeout(() => {
+                document.body.removeChild(form);
+                resolve();
+            }, 1800); 
+
+        } catch (err) {
+            reject(new Error("Error al enviar formulario invisible: " + err.message));
+        }
+    });
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -1190,10 +1220,8 @@ async function savePost() {
       await sendToGoogle('create', p);
     }
     
-    // Recargar la página después de 1 segundo para dar tiempo a Sheets
-    setTimeout(() => {
-      location.reload();
-    }, 1000);
+    // Recargar la página después de guardar
+    location.reload();
     
   } catch(e) {
     alert('🚨 ERROR AL GUARDAR:\n\n' + e.message);
@@ -1205,9 +1233,7 @@ async function deletePost() {
   if (!confirm('¿Seguro que quieres eliminar esta publicación?')) return;
   try {
       await sendToGoogle('delete', { id: editingId });
-      setTimeout(() => {
-        location.reload();
-      }, 1000);
+      location.reload();
   } catch(e) {
       alert("Error al eliminar: " + e.message);
   }
