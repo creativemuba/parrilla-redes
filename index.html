@@ -450,7 +450,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <script>
-// ── LA NUEVA URL ───────────────────────────────────────────
+// ── LA NUEVA URL OFICIAL ───────────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbySyOpsxtdgE9SBCrIRJwnDgLH-zH4dhgVzzEYH7kgm1hz8EHx_Ej5dn6ij7ATH9pU4/exec'; 
 
 // ── CONTRASEÑA ────────────────────────────────────────────────────────────
@@ -533,7 +533,7 @@ function setSyncStatus(state, msg) {
   txt.textContent = msg;
 }
 
-// ── LEER DATOS (FETCH SEGURO) ───────────────────────────────────────────
+// ── LEER DATOS (CON CORRECCIÓN DE FECHAS) ──────────────────────────────────
 async function loadPosts() {
   try {
     setSyncStatus('syncing', 'Cargando datos...');
@@ -544,10 +544,24 @@ async function loadPosts() {
     const data = await res.json();
     
     posts = data.map(row => {
+      // 🛠️ AQUÍ ESTÁ LA CORRECCIÓN DE LA FECHA 🛠️
+      // Si Google manda "2026-05-07T05:00:00.000Z", lo cortamos a "2026-05-07"
+      let cleanDate = '';
+      if (row.date) {
+        cleanDate = row.date.toString().split('T')[0];
+      }
+
       return {
-        id: row.id, network: row.network, type: row.type, date: row.date,
-        time: row.time, copy: row.copy, status: row.status, image: row.image || '',
-        drive: row.drive || '', account: row.account || 'muba',
+        id: row.id, 
+        network: row.network, 
+        type: row.type, 
+        date: cleanDate, 
+        time: row.time, 
+        copy: row.copy, 
+        status: row.status, 
+        image: row.image || '',
+        drive: row.drive || '', 
+        account: row.account || 'muba',
       };
     }).filter(p => p.id);
     
@@ -561,8 +575,7 @@ async function loadPosts() {
   }
 }
 
-// ── GUARDAR DATOS (HACK FORMULARIO INVISIBLE) ───────────────────────────
-// Así engañamos al navegador para que nunca tire "Failed to fetch"
+// ── GUARDAR DATOS (FORMULARIO INVISIBLE) ───────────────────────────
 function sendToGoogle(action, data) {
     return new Promise((resolve, reject) => {
         try {
@@ -588,7 +601,6 @@ function sendToGoogle(action, data) {
 
             form.submit();
 
-            // Damos 1.5 segundos para que Google procese y recargamos
             setTimeout(() => {
                 document.body.removeChild(form);
                 resolve();
@@ -1112,12 +1124,17 @@ function openModal(id = null, prefillDate = null) {
 function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 
 async function uploadToCloudinary(file) {
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', CLOUDINARY_PRESET);
-  const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
-  const data = await res.json();
-  return data.secure_url;
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error("Preset inválido o bloqueado.");
+    const data = await res.json();
+    return data.secure_url;
+  } catch(e) {
+    throw new Error("Cloudinary falló: " + e.message);
+  }
 }
 
 async function savePost() {
@@ -1126,7 +1143,6 @@ async function savePost() {
     const type = document.getElementById('fType').value;
     let finalImage = pendingImage || '';
 
-    // Manejo de imágenes en Cloudinary
     if (type === 'Carrusel') {
       const uploaded = [];
       for (const item of carouselFiles) {
@@ -1161,8 +1177,7 @@ async function savePost() {
       await sendToGoogle('create', p);
     }
     
-    // Al usar formulario invisible recargamos directamente
-    location.reload();
+    setTimeout(() => location.reload(), 1500);
     
   } catch(e) {
     alert('🚨 ERROR AL GUARDAR:\n\n' + e.message);
@@ -1174,7 +1189,7 @@ async function deletePost() {
   if (!confirm('¿Seguro que quieres eliminar esta publicación?')) return;
   try {
       await sendToGoogle('delete', { id: editingId });
-      location.reload();
+      setTimeout(() => location.reload(), 1500);
   } catch(e) {
       alert("Error al eliminar: " + e.message);
   }
