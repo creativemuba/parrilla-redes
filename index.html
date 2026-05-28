@@ -158,6 +158,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent-ig);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:768px){.cal-cell{min-height:70px;padding:6px;}.form-grid{grid-template-columns:1fr;}.gallery-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}}
+
+/* Estilos extra para Drag and Drop del Grid IG */
 .grid-view{display:none;}.grid-view.active{display:block;}
 .ig-profiles{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;}
 .ig-profile{flex:1;min-width:280px;max-width:420px;}
@@ -190,8 +192,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .ig-reel-icon{position:absolute;top:5px;right:5px;color:#fff;font-size:0.75rem;text-shadow:0 1px 3px rgba(0,0,0,0.6);}
 .ig-carousel-icon{position:absolute;top:5px;right:5px;color:#fff;font-size:0.75rem;text-shadow:0 1px 3px rgba(0,0,0,0.6);}
 .ig-profile-label{text-align:center;margin-top:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;color:var(--text-muted);}
-.ig-draft-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.ig-draft-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
 .ig-draft-badge{background:rgba(255,201,74,0.9);color:#000;padding:2px 6px;border-radius:4px;font-size:0.58rem;font-weight:700;}
+
+/* Estilos de Drag & Drop */
+.ig-cell.dragging { opacity: 0.5; border: 2px dashed #E1306C; }
+.ig-cell.drag-over { opacity: 0.8; border: 2px solid #1877F2; }
 </style>
 </head>
 <body>
@@ -361,7 +367,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="upload-zone" id="uploadZone">
           <input type="file" id="fImage" accept="image/*,video/*" onchange="handleImageUpload(event)">
           <div class="upload-placeholder" id="uploadPlaceholder">
-            <span class="upload-icon">🖼</span>
+            <span class="upload-icon">🎞</span>
             <p>Arrastra un archivo o haz clic para subir</p>
             <span>PNG, JPG, MP4, MOV</span>
           </div>
@@ -378,7 +384,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="upload-zone" style="min-height: 60px; padding: 10px;">
           <input type="file" id="fCover" accept="image/*" onchange="handleCoverUpload(event)">
           <div id="coverPlaceholder" style="text-align:center; color:var(--text-muted); font-size:0.8rem; pointer-events:none;">
-             🖼 Haz clic o arrastra para subir una imagen de portada
+             🖼 Haz clic para subir una imagen de portada personalizada
           </div>
           <div class="preview-wrap" id="coverPreviewWrap" style="display:none; border-radius:8px; overflow:hidden;">
             <img id="coverPreviewImg" src="" style="width:100px; height:100px; object-fit:cover; margin:0 auto; display:block;">
@@ -466,7 +472,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbySyOpsxtdgE9SBCrIRJwnDgLH-zH4dhgVzzEYH7kgm1hz8EHx_Ej5dn6ij7ATH9pU4/exec'; 
 
-// ── SESIÓN PERSISTENTE ────────────────────────────────────────────
 const PASSWORD = 'MubaRedes123789';
 let isAuthenticated = localStorage.getItem('muba_logged_in') === 'true';
 
@@ -495,7 +500,6 @@ function updateEditUI() {
   }
 }
 
-// ── CLOUDINARY ────────────────────────────────────────
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dtziyjbrg/auto/upload";
 const CLOUDINARY_PRESET = "parrilla_uploads";
 
@@ -508,10 +512,12 @@ let currentView = 'calendar';
 let currentAccount = 'all';
 let editingId = null;
 
-let pendingImage = null; // Video o Imagen principal
-let pendingCover = null; // Portada del video
+let pendingImage = null; 
+let pendingCover = null; 
 let carouselFiles = [];
 let carouselUrls  = [];
+
+let draggedPostId = null; // Para Drag & Drop
 
 function setSyncStatus(state, msg) {
   const bar = document.getElementById('syncBar'); const txt = document.getElementById('syncMsg');
@@ -651,8 +657,9 @@ function renderCalendar() {
   }
 }
 
+// ── GALERIA Y LISTA AHORA ORDENAN DESCENDENTE (LO MÁS NUEVO ARRIBA) ──
 function renderGallery() {
-  const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+  const mp = getMonthPosts().sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
   const grid = document.getElementById('galleryGrid');
   if (mp.length === 0) { grid.innerHTML = `<div class="empty-table" style="grid-column:1/-1"><div>📭</div>Sin publicaciones este mes</div>`; return; }
   const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
@@ -678,7 +685,7 @@ function renderGallery() {
 }
 
 function renderList() {
-  const mp = getMonthPosts().sort((a,b) => ((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+  const mp = getMonthPosts().sort((a,b) => ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
   const body = document.getElementById('listBody');
   if (mp.length === 0) { body.innerHTML = `<tr><td colspan="7"><div class="empty-table"><div>📭</div>Sin publicaciones este mes</div></td></tr>`; return; }
   const icons = { instagram:'📸', facebook:'👥', tiktok:'🎵' }; const labels = { instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok' };
@@ -702,6 +709,64 @@ function renderList() {
   }).join('');
 }
 
+// ── FUNCIONES DE DRAG AND DROP PARA EL GRID IG ──
+function handleDragStart(e, id) {
+    if(!isAuthenticated) return;
+    draggedPostId = id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.target.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.ig-cell').forEach(c => c.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+    if(!isAuthenticated || !draggedPostId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const cell = e.target.closest('.ig-cell');
+    if (cell) cell.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    const cell = e.target.closest('.ig-cell');
+    if (cell) cell.classList.remove('drag-over');
+}
+
+async function handleDrop(e, targetId) {
+    e.preventDefault();
+    const cell = e.target.closest('.ig-cell');
+    if (cell) cell.classList.remove('drag-over');
+    
+    if (!isAuthenticated || !draggedPostId || draggedPostId === targetId) return;
+
+    const postA = posts.find(p => p.id == draggedPostId);
+    const postB = posts.find(p => p.id == targetId);
+
+    if (postA && postB) {
+        // Intercambiar fechas y horas
+        const tempDate = postA.date; const tempTime = postA.time;
+        postA.date = postB.date; postA.time = postB.time;
+        postB.date = tempDate; postB.time = tempTime;
+
+        render(); // Actualiza la UI visualmente de inmediato
+        setSyncStatus('syncing', 'Actualizando orden en Google Sheets...');
+
+        try {
+            await sendToGoogle('update', postA);
+            await sendToGoogle('update', postB);
+            setSyncStatus('synced', '✓ Orden guardado');
+        } catch(err) {
+            alert("Error al guardar el nuevo orden: " + err.message);
+            loadPosts(); // Si falla, recargamos los datos originales
+        }
+    }
+    draggedPostId = null;
+}
+
+// ── RENDER GRID CON SOPORTE DRAG & DROP ──
 function renderGrid() {
   const accounts = [
     { key: 'muba',            label: 'MUBA',            handle: '@muba.oficial',      color: '#FF4D4F' },
@@ -723,11 +788,15 @@ function renderGrid() {
       if (p) {
         const hasImg = p.image && p.image !== 'null' && p.image !== ''; const igThumb = getFirstImage(p.image);
         const isDraft = p.status === 'borrador'; const isApproved = p.status === 'aprobado';
-        cells.push(`<div class="ig-cell" onclick="openPreview('${p.id}')">
-            ${hasImg ? `<img src="${igThumb}" alt="${p.type}">` : `<div class="ig-cell-empty">🖼</div>`}
+        
+        // Habilitamos Drag & Drop si está logeado
+        const dragAttrs = isAuthenticated ? `draggable="true" ondragstart="handleDragStart(event, '${p.id}')" ondragend="handleDragEnd(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${p.id}')"` : '';
+
+        cells.push(`<div class="ig-cell" ${dragAttrs} onclick="openPreview('${p.id}')">
+            ${hasImg ? `<img src="${igThumb}" alt="${p.type}" style="pointer-events:none;">` : `<div class="ig-cell-empty">+</div>`}
             ${p.type === 'Reel' || p.type === 'Video' ? `<div class="ig-reel-icon">▶</div>` : ''}
             ${p.type === 'Carrusel' ? `<div class="ig-carousel-icon">❏</div>` : ''}
-            <div class="ig-cell-overlay"><span class="ig-type-badge">${p.type||'Foto'}</span></div>
+            <div class="ig-cell-overlay" style="pointer-events:none;"><span class="ig-type-badge">${p.type||'Foto'}</span></div>
             ${isDraft ? `<div class="ig-draft-overlay"><span class="ig-draft-badge">BORRADOR</span></div>` : ''}
             ${isApproved ? `<div class="ig-draft-overlay"><span class="ig-draft-badge" style="background:rgba(61,220,132,0.9);">APROBADO</span></div>` : ''}
           </div>`);
@@ -790,18 +859,12 @@ function onTypeChange(type) {
   const mainLabel = document.getElementById('mainUploadLabel');
 
   if (type === 'Carrusel') {
-      mainZone.style.display = 'none';
-      coverZone.style.display = 'none';
-      carouselZone.style.display = 'block';
+      mainZone.style.display = 'none'; coverZone.style.display = 'none'; carouselZone.style.display = 'block';
   } else if (type === 'Video' || type === 'Reel') {
-      mainZone.style.display = 'block';
-      carouselZone.style.display = 'none';
-      coverZone.style.display = 'block';
+      mainZone.style.display = 'block'; carouselZone.style.display = 'none'; coverZone.style.display = 'block';
       mainLabel.textContent = 'Archivo del Video (.mp4, .mov)';
   } else {
-      mainZone.style.display = 'block';
-      carouselZone.style.display = 'none';
-      coverZone.style.display = 'none';
+      mainZone.style.display = 'block'; carouselZone.style.display = 'none'; coverZone.style.display = 'none';
       mainLabel.textContent = 'Screenshot / Imagen del post';
   }
 }
@@ -812,31 +875,22 @@ function parseCarouselImages(raw) {
   return null;
 }
 
-// Extrae la imagen principal para el calendario/grid
 function getFirstImage(imageField) {
   if (!imageField || imageField === 'null' || imageField === '') return null;
-  
   if (imageField.startsWith('CAROUSEL:')) { 
-      const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); 
-      return urls.length > 0 ? urls[0] : null; 
+      const urls = imageField.replace('CAROUSEL:', '').split('|').filter(u => u.trim()); return urls.length > 0 ? urls[0] : null; 
   }
-  
   if (imageField.startsWith('VIDEO:')) {
       const parts = imageField.replace('VIDEO:', '').split('|');
-      if (parts[1]) return parts[1]; // Retorna la Portada si existe
+      if (parts[1]) return parts[1]; // Portada personalizada
       if (parts[0] && parts[0].match(/\.(mp4|mov|webm)$/i)) return parts[0].replace(/\.[^/.]+$/, ".jpg");
       return parts[0];
   }
-
-  // Compatibilidad con videos viejos
-  if (imageField.match(/\.(mp4|mov|webm)$/i)) {
-      return imageField.replace(/\.[^/.]+$/, ".jpg");
-  }
-
+  if (imageField.match(/\.(mp4|mov|webm)$/i)) return imageField.replace(/\.[^/.]+$/, ".jpg");
   return imageField;
 }
 
-// ── MANEJO DE ARCHIVOS (CAROUSEL) ──
+// ── MANEJO DE ARCHIVOS ──
 function handleCarouselUpload(event) { addCarouselFiles(Array.from(event.target.files)); event.target.value = ''; }
 function handleCarouselDrop(event) { event.preventDefault(); document.getElementById('carouselDropZone').style.borderColor = ''; const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/')); addCarouselFiles(files); }
 
@@ -876,26 +930,18 @@ function renderCarouselStrip() {
 
 function clearCarousel() { carouselFiles.forEach(item => URL.revokeObjectURL(item.objUrl)); carouselFiles = []; carouselUrls = []; renderCarouselStrip(); }
 
-// ── MANEJO DE ARCHIVOS (MAIN Y PORTADA) ──
 function handleImageUpload(e) { 
-    const file = e.target.files[0]; 
-    if (!file) return; 
-    const isVid = file.type.startsWith('video/');
-    const tempUrl = URL.createObjectURL(file);
-    showPreview(tempUrl, isVid);
+    const file = e.target.files[0]; if (!file) return; 
+    const isVid = file.type.startsWith('video/'); const tempUrl = URL.createObjectURL(file); showPreview(tempUrl, isVid);
 }
-
 function handleCoverUpload(e) { 
-    const file = e.target.files[0]; 
-    if (!file) return; 
-    const tempUrl = URL.createObjectURL(file);
-    showCoverPreview(tempUrl);
+    const file = e.target.files[0]; if (!file) return; 
+    const tempUrl = URL.createObjectURL(file); showCoverPreview(tempUrl);
 }
 
 function showPreview(url, isVideo = null) { 
     const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const vid = document.getElementById('previewVideo'); const placeholder = document.getElementById('uploadPlaceholder'); 
-    if (!wrap) return; 
-    if (isVideo === null) { isVideo = url.match(/\.(mp4|mov|webm)$/i); }
+    if (!wrap) return; if (isVideo === null) { isVideo = url.match(/\.(mp4|mov|webm)$/i); }
     if (isVideo) { img.style.display = 'none'; vid.src = url; vid.style.display = 'block'; } 
     else { vid.style.display = 'none'; vid.src = ''; img.src = url; img.style.display = 'block'; }
     wrap.style.display = 'block'; if (placeholder) placeholder.style.display = 'none'; 
@@ -910,15 +956,13 @@ function removeImage(e) { e.stopPropagation(); clearPreview(); }
 function removeCover(e) { e.stopPropagation(); clearCoverPreview(); }
 
 function clearPreview() { 
-    pendingImage = null; 
-    const fileInput = document.getElementById('fImage'); if (fileInput) fileInput.value = '';
+    pendingImage = null; const fileInput = document.getElementById('fImage'); if (fileInput) fileInput.value = '';
     const wrap = document.getElementById('previewWrap'); const img = document.getElementById('previewImg'); const vid = document.getElementById('previewVideo'); const placeholder = document.getElementById('uploadPlaceholder'); 
     if (wrap) wrap.style.display = 'none'; if (img) img.src = ''; if (vid) vid.src = ''; if (placeholder) placeholder.style.display = 'flex'; 
 }
 
 function clearCoverPreview() {
-    pendingCover = null;
-    const fileInput = document.getElementById('fCover'); if (fileInput) fileInput.value = '';
+    pendingCover = null; const fileInput = document.getElementById('fCover'); if (fileInput) fileInput.value = '';
     const wrap = document.getElementById('coverPreviewWrap'); const img = document.getElementById('coverPreviewImg'); const placeholder = document.getElementById('coverPlaceholder');
     if(wrap) wrap.style.display = 'none'; if(img) img.src = ''; if(placeholder) placeholder.style.display = 'block';
 }
@@ -942,34 +986,25 @@ function openPreview(id) {
   if (p.image && p.image !== 'null') {
     if (p.image.startsWith('CAROUSEL:')) {
         const urls = parseCarouselImages(p.image);
-        urls.forEach(url => { 
-            const img = document.createElement('img'); img.src = url; 
-            img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; 
-            img.onclick = () => openLightbox(url); imgWrap.appendChild(img); 
-        });
+        urls.forEach(url => { const img = document.createElement('img'); img.src = url; img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; img.onclick = () => openLightbox(url); imgWrap.appendChild(img); });
     } 
     else if (p.image.startsWith('VIDEO:')) {
         const parts = p.image.replace('VIDEO:', '').split('|');
         const vid = document.createElement('video');
-        vid.src = parts[0]; 
-        if (parts[1]) vid.poster = parts[1]; // Pone la portada en el reproductor
-        vid.controls = true;
+        vid.src = parts[0]; if (parts[1]) vid.poster = parts[1];
+        vid.controls = true; 
         vid.style.cssText = 'width:100%;max-height:400px;background:#000;border-radius:10px;display:block;';
         imgWrap.appendChild(vid);
     }
     else if (p.image.match(/\.(mp4|mov|webm)$/i)) {
-        const vid = document.createElement('video'); vid.src = p.image; vid.controls = true;
+        const vid = document.createElement('video'); vid.src = p.image; vid.controls = true; 
         vid.style.cssText = 'width:100%;max-height:400px;background:#000;border-radius:10px;display:block;'; imgWrap.appendChild(vid);
     }
     else {
-        const img = document.createElement('img'); img.src = p.image; 
-        img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; 
-        img.onclick = () => openLightbox(p.image); imgWrap.appendChild(img);
+        const img = document.createElement('img'); img.src = p.image; img.style.cssText = 'width:100%;max-height:280px;object-fit:contain;cursor:zoom-in;'; img.onclick = () => openLightbox(p.image); imgWrap.appendChild(img);
     }
     imgWrap.style.display = 'block';
-  } else { 
-      imgWrap.style.display = 'none'; 
-  }
+  } else { imgWrap.style.display = 'none'; }
 
   document.getElementById('previewCopy').textContent = p.copy; document.getElementById('previewCopyWrap').style.display = p.copy ? 'block' : 'none';
   const driveLink = document.getElementById('previewDriveLink'); driveLink.href = p.drive; document.getElementById('previewDriveWrap').style.display = p.drive ? 'block' : 'none';
@@ -989,22 +1024,14 @@ function openModal(id = null, prefillDate = null) {
     document.getElementById('fType').value = p.type; document.getElementById('fDate').value = p.date;
     document.getElementById('fTime').value = p.time; document.getElementById('fCopy').value = p.copy;
     document.getElementById('fStatus').value = p.status; document.getElementById('fDrive').value = p.drive;
-    
-    if (p.image.startsWith('CAROUSEL:')) { 
-        carouselUrls = parseCarouselImages(p.image); renderCarouselStrip(); 
-    } 
+    if (p.image.startsWith('CAROUSEL:')) { carouselUrls = parseCarouselImages(p.image); renderCarouselStrip(); } 
     else if (p.image.startsWith('VIDEO:')) {
         const parts = p.image.replace('VIDEO:', '').split('|');
-        pendingImage = parts[0] || '';
-        pendingCover = parts[1] || '';
+        pendingImage = parts[0] || ''; pendingCover = parts[1] || '';
         if (pendingImage) showPreview(pendingImage, true);
         if (pendingCover) showCoverPreview(pendingCover);
     }
-    else { 
-        pendingImage = p.image; 
-        if (p.image) showPreview(p.image); 
-    }
-    
+    else { pendingImage = p.image; if (p.image) showPreview(p.image); }
     onTypeChange(p.type);
     document.getElementById('modalActions').innerHTML = `<button class="btn-delete" onclick="deletePost()">Eliminar</button><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-save" id="btnSave" onclick="savePost()">Guardar</button>`;
   } else {
@@ -1019,58 +1046,48 @@ function closeModal() { document.getElementById('modalOverlay').classList.remove
 
 async function uploadToCloudinary(file) {
   try {
-    const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_PRESET);
+    const fd = new FormData(); 
+    fd.append('file', file); 
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    
     const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: fd });
-    if (!res.ok) throw new Error("Preset inválido o archivo rechazado.");
-    const data = await res.json(); return data.secure_url;
-  } catch(e) { throw new Error("Cloudinary falló: " + e.message); }
+    const data = await res.json();
+    
+    if (!res.ok) {
+        throw new Error(data.error ? data.error.message : "Error desconocido de Cloudinary.");
+    }
+    
+    return data.secure_url;
+  } catch(e) { 
+    throw new Error(e.message); 
+  }
 }
 
 async function savePost() {
   setBtnLoading(true);
   try {
-    const type = document.getElementById('fType').value; 
-    let finalImage = '';
+    const type = document.getElementById('fType').value; let finalImage = '';
 
     if (type === 'Carrusel') {
       const uploaded = [];
-      for (const item of carouselFiles) { const url = await uploadToCloudinary(item.file); uploaded.push(url); }
+      for (const item of carouselFiles) { 
+          const url = await uploadToCloudinary(item.file); 
+          uploaded.push(url); 
+      }
       finalImage = 'CAROUSEL:' + [...carouselUrls, ...uploaded].join('|');
     } else {
-      let finalMain = pendingImage || '';
-      let finalCover = pendingCover || '';
-
-      const fileInput = document.getElementById('fImage');
-      if (fileInput.files && fileInput.files[0]) { 
-          finalMain = await uploadToCloudinary(fileInput.files[0]); 
-      }
-      
-      const coverInput = document.getElementById('fCover');
-      if (coverInput && coverInput.files && coverInput.files[0]) { 
-          finalCover = await uploadToCloudinary(coverInput.files[0]); 
-      }
-
-      if (type === 'Video' || type === 'Reel') {
-          // Guardamos ambas cosas en la misma celda de Google Sheet separadas por un pipe |
-          finalImage = 'VIDEO:' + finalMain + '|' + finalCover;
-      } else {
-          finalImage = finalMain;
-      }
+      let finalMain = pendingImage || ''; let finalCover = pendingCover || '';
+      const fileInput = document.getElementById('fImage'); 
+      if (fileInput.files && fileInput.files[0]) { finalMain = await uploadToCloudinary(fileInput.files[0]); }
+      const coverInput = document.getElementById('fCover'); 
+      if (coverInput && coverInput.files && coverInput.files[0]) { finalCover = await uploadToCloudinary(coverInput.files[0]); }
+      if (type === 'Video' || type === 'Reel') { finalImage = 'VIDEO:' + finalMain + '|' + finalCover; } else { finalImage = finalMain; }
     }
 
-    const p = {
-      network: document.getElementById('fNetwork').value, type: document.getElementById('fType').value,
-      date: document.getElementById('fDate').value, time: document.getElementById('fTime').value,
-      copy: document.getElementById('fCopy').value, status: document.getElementById('fStatus').value,
-      image: finalImage, drive: document.getElementById('fDrive').value, account: document.getElementById('fAccount').value,
-    };
-
-    if (editingId) { p.id = editingId; await sendToGoogle('update', p); } 
-    else { p.id = Date.now().toString(); await sendToGoogle('create', p); }
-    
+    const p = { network: document.getElementById('fNetwork').value, type: document.getElementById('fType').value, date: document.getElementById('fDate').value, time: document.getElementById('fTime').value, copy: document.getElementById('fCopy').value, status: document.getElementById('fStatus').value, image: finalImage, drive: document.getElementById('fDrive').value, account: document.getElementById('fAccount').value, };
+    if (editingId) { p.id = editingId; await sendToGoogle('update', p); } else { p.id = Date.now().toString(); await sendToGoogle('create', p); }
     setTimeout(() => location.reload(), 1500);
-    
-  } catch(e) { alert('🚨 ERROR AL GUARDAR:\n\n' + e.message); setBtnLoading(false); } 
+  } catch(e) { alert('🚨 ERROR AL GUARDAR:\n\nCloudinary falló: ' + e.message); setBtnLoading(false); } 
 }
 
 async function deletePost() {
